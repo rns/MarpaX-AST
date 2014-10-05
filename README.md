@@ -1,4 +1,4 @@
-MarpaX-AST
+﻿MarpaX-AST
 ==========
 
 Abstract Syntax Tree (AST) for Marpa::R2
@@ -8,6 +8,15 @@ check for endless loop
 non-recursive traversal
 pretty printing
 benchmark with MarpaX::Languages::JSON::AST
+
+actions
+    [ symbol, name, start, length, value ]
+
+    [ name, value ]
+    [ name, value ]
+
+    [ name, value ]
+    [ value ]
 
 why?
     because its arguably faster and more elegant, if less simple, 

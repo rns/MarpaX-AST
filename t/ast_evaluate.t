@@ -9,12 +9,12 @@ use Test::More;
 
 use Marpa::R2;
 
-use_ok 'MarpaX::ASF::PFG';
+use_ok 'MarpaX::AST';
 
 #
 # Unambiguous grammar to parse expressions on numbers
 #
-my $ug = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
+my $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 
 :default ::= action => [ name, value ]
 lexeme default = action => [ name, value ] latm => 1
@@ -37,8 +37,7 @@ END_OF_SOURCE
 } );
 
 my $input = '4+5*6+8';
-my $ast = ${ $ug->parse( \$input ) };
-use YAML; say Dump $ast;
+my $ast = ${ $g->parse( \$input ) };
 
 sub ast_evaluate{
     my ($ast) = @_;
