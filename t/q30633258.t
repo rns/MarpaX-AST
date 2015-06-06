@@ -46,9 +46,6 @@ EOI
 
 my $ast = $g->parse( \$input, { trace_terminals => 0 } );
 
-say Dumper $ast;
-
-use lib '../MarpaX-AST/lib';
 use MarpaX::AST;
 
 $ast = MarpaX::AST->new( $$ast );
@@ -76,13 +73,6 @@ my $got_distilled = $ast->distill({
         'series'
         ],
     literals_as_text => 1,
-    print_node => sub {
-        my ($ast, $ctx) = @_;
-        my ($node_id, @children) = @$ast;
-        say qq{  } x $ctx->{depth},
-            qq{$ctx->{depth}: },
-            ($ast->is_literal ? $children[0] : $node_id);
-    }
 })->sprint;
 
 is $got_distilled, $expected_distilled, "complex-string-splitting, SO Question 30633258";
