@@ -56,4 +56,4 @@ sub ast_evaluate{
 
 say "$input=", ast_evaluate($ast);
 
-done_testing;
+done_testing();
