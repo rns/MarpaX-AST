@@ -4,11 +4,6 @@ use 5.010;
 use strict;
 use warnings;
 
-use Data::Dumper;
-local $Data::Dumper::Indent = 1;
-local $Data::Dumper::Terse = 1;
-local $Data::Dumper::Purity = 0;
-
 use Carp;
 use Scalar::Util qw{ blessed };
 
@@ -291,6 +286,20 @@ sub distill{
     } );
 
     return $root;
+}
+
+sub dumper{
+  use Data::Dumper;
+  {
+    local $Data::Dumper::Terse = 1;
+    local $Data::Dumper::Indent = 1;
+    local $Data::Dumper::Useqq = 1;
+    local $Data::Dumper::Deparse = 1;
+    local $Data::Dumper::Quotekeys = 0;
+    local $Data::Dumper::Sortkeys = 1;
+    local $Data::Dumper::Deepcopy = 1;
+    return Dumper(@_);
+  }
 }
 
 1;
