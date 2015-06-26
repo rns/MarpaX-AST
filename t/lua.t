@@ -29,17 +29,34 @@ my $ast = $p->process;
 
 $ast = MarpaX::AST->new( ${ $ast } );
 
+my %skip_always = map { $_ => 1 } (
+    'chunk', 'stat list', 'stat item',
+    'optional colon name element',
+    'optional parlist',
+    'optional explist', 'exp',
+    'optional laststat'
+);
+
 $ast = $ast->distill({
     root => 'root',
-    skip => [
-        'chunk', 'stat list', 'stat item',
-        'optional colon name element',
-        'optional parlist',
-        'optional explist', 'exp',
-        'optional laststat'
-    ],
+    skip => sub {
+        my ($ast, $ctx) = @_;
+        my ($node_id) = @$ast;
+        if ( $node_id eq 'exp' ){
+            if (    $ctx->{parent}->id eq 'stat'
+                and $ctx->{parent}->first_child->id eq 'keyword if'){
+#                say qq{#parent:\n}, $ctx->{parent}->sprint, qq{\n#of\n}, $ast->sprint;
+                return 0;
+            }
+            else{
+                return 1;
+            }
+        }
+        return exists $skip_always{ $node_id }
+    }
 });
 
 say $ast->sprint;
+
 
 done_testing();
