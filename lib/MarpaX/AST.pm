@@ -200,7 +200,8 @@ sub do_walk{
 
     $ast = CORE::bless [ '#text', $ast ], __PACKAGE__ unless ref $ast;
 
-    my $context = { depth => $opts->{depth} };
+    state $context;
+    $context->{depth} = $opts->{depth};
 
     my $skip = $opts->{skip}->( $ast, $context );
 
