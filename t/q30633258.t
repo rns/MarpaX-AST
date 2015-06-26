@@ -6,11 +6,6 @@ use warnings;
 
 use Test::More;
 
-use Data::Dumper;
-$Data::Dumper::Indent = 1;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Deepcopy = 1;
-
 use Marpa::R2;
 
 my $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
