@@ -262,12 +262,13 @@ sub distill{
     $opts->{literals_as_text} //= 0;
 
     $ast->walk( {
-        skip => sub {
-            my ($ast) = @_;
-            my ($node_id) = @$ast;
-            state $skip = { map { $_ => 1 } @{ $opts->{skip} } };
-            return exists $skip ->{ $node_id }
-        },
+        skip =>
+            ref $opts->{skip} eq 'ARRAY' ? sub {
+                my ($ast) = @_;
+                my ($node_id) = @$ast;
+                state $skip = { map { $_ => 1 } @{ $opts->{skip} } };
+                return exists $skip ->{ $node_id }
+            } : $opts->{skip},
         visit => sub {
             my ($ast, $ctx) = @_;
             my ($node_id, @children) = @$ast;
