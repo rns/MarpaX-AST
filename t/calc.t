@@ -53,15 +53,15 @@ $ast->walk({
     }
 });
 
-sub ast_eval_generic{
+sub ast_eval_AoA{
     my ($ast) = @_;
     if (@$ast == 4){
         my ($e1, $op, $e2) = @$ast[1..3];
-        if    ($op eq '+'){ ast_eval_generic($e1) + ast_eval_generic($e2) }
-        elsif ($op eq '-'){ ast_eval_generic($e1) - ast_eval_generic($e2) }
-        elsif ($op eq '*'){ ast_eval_generic($e1) * ast_eval_generic($e2) }
-        elsif ($op eq '/'){ ast_eval_generic($e1) / ast_eval_generic($e2) }
-        elsif ($op eq '**'){ ast_eval_generic($e1) ** ast_eval_generic($e2) }
+        if    ($op eq '+'){ ast_eval_AoA($e1) + ast_eval_AoA($e2) }
+        elsif ($op eq '-'){ ast_eval_AoA($e1) - ast_eval_AoA($e2) }
+        elsif ($op eq '*'){ ast_eval_AoA($e1) * ast_eval_AoA($e2) }
+        elsif ($op eq '/'){ ast_eval_AoA($e1) / ast_eval_AoA($e2) }
+        elsif ($op eq '**'){ ast_eval_AoA($e1) ** ast_eval_AoA($e2) }
     }
     else{
         return $ast->[1]->[1];
@@ -83,7 +83,7 @@ sub ast_eval{
     }
 }
 
-is ast_eval_generic($ast), eval $input, "$input, ast_eval_generic()";
+is ast_eval_AoA($ast), eval $input, "$input, ast_eval_AoA()";
 is ast_eval($ast), eval $input, "$input, ast_eval()";
 
 done_testing();
