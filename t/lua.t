@@ -13,32 +13,38 @@ use_ok 'MarpaX::AST';
 
 my $parser_module_dir;
 BEGIN{
-    $parser_module_dir = '../MarpaX-Languages-Lua-Parser/';
+    $parser_module_dir = '../MarpaX-Languages-Lua-AST/';
     $parser_module_dir = qq{../$parser_module_dir}
         unless $ENV{HARNESS_ACTIVE};
 }
 
 use lib qq{$parser_module_dir/lib};
 
-use_ok 'MarpaX::Languages::Lua::Parser';
+use_ok 'MarpaX::Languages::Lua::AST';
 
-my $p = MarpaX::Languages::Lua::Parser->new(
-    input_file_name => qq{$parser_module_dir/lua.sources/bisect.lua} );
+sub slurp_file{
+    my ($fn) = @_;
+    open my $fh, $fn or die "Can't open $fn: $@.";
+    my $slurp = do { local $/ = undef; <$fh> };
+    close $fh;
+    return $slurp;
+}
 
-my $ast = $p->process;
+my $p = MarpaX::Languages::Lua::AST->new;
 
-$ast = MarpaX::AST->new( ${ $ast } );
+my $lua_src = slurp_file( qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser/echo.lua} );
+my $ast = $p->parse( $lua_src );
+
+$ast = MarpaX::AST->new( $ast );
+
+#say $ast->sprint;
 
 my %skip_always = map { $_ => 1 } (
-    'chunk', 'stat list', 'stat item',
-    'optional colon name element',
-    'optional parlist',
-    'optional explist', 'exp',
-    'optional laststat'
+    'statements', 'chunk'
 );
 
 $ast = $ast->distill({
-    root => 'root',
+    root => 'chunk',
     skip => sub {
         my ($ast, $ctx) = @_;
         my ($node_id) = @$ast;
