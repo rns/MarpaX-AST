@@ -10,7 +10,7 @@ use Scalar::Util qw{ blessed };
 sub new {
     my ($class, $ast) = @_;
 
-    # scalar $ast means the application wants to create an empty ast
+    # scalar $ast means the application needs to create an empty ast
     # and $ast is the root node ID
     unless (ref $ast){
         $ast = [ $ast ];
