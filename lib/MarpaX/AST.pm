@@ -1,3 +1,4 @@
+# Copyright 2015 Ruslan Shvedov
 package MarpaX::AST;
 
 use 5.010;

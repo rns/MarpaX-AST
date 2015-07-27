@@ -1,5 +1,7 @@
 # Source: http://stackoverflow.com/questions/30633258/complex-string-splitting
 
+# Copyright 2015 Ruslan Shvedov
+
 use 5.010;
 use strict;
 use warnings;

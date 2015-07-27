@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright 2014 Ruslan Shvedov
+# Copyright 2015 Ruslan Shvedov
 
 use 5.010;
 use strict;

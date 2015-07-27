@@ -1,6 +1,6 @@
 #!env perl
 
-# Copyright 2014 Ruslan Shvedov
+# Copyright 2015 Ruslan Shvedov
 
 # json decoding
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_timelies.t
