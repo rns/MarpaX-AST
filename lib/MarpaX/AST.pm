@@ -9,7 +9,15 @@ use Carp;
 use Scalar::Util qw{ blessed };
 
 # by default, children start at 1 in @$ast
+# todo: make this an instance variable
 my $CHILDREN_START = 1;
+
+=pod head2
+    CHILDREN_START allows putting data between the node id and node values,
+    most commonly when using [ name, start, length, value ] as the default action.
+    CHILDREN_START must be set to the index, where node’s children start, 3
+    in the above case.
+=cut
 
 sub new {
     my ($class, $ast, $opts) = @_;
@@ -280,7 +288,7 @@ sub distill{
                 my ($ast) = @_;
                 my ($node_id) = @$ast;
                 state $skip = { map { $_ => 1 } @{ $opts->{skip} } };
-                return exists $skip ->{ $node_id }
+                return exists $skip->{ $node_id }
             } : $opts->{skip},
         visit => sub {
             my ($ast, $ctx) = @_;
