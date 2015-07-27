@@ -13,7 +13,7 @@ use_ok 'MarpaX::AST';
 
 my $parser_module_dir;
 BEGIN{
-    $parser_module_dir = '../MarpaX-Languages-Lua-AST/';
+    $parser_module_dir = '../MarpaX-Languages-Lua-AST';
     $parser_module_dir = qq{../$parser_module_dir}
         unless $ENV{HARNESS_ACTIVE};
 }
@@ -30,39 +30,49 @@ sub slurp_file{
     return $slurp;
 }
 
-my $p = MarpaX::Languages::Lua::AST->new;
+#my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
+#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
+my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
 
-my $lua_src = slurp_file( qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser/echo.lua} );
-my $ast = $p->parse( $lua_src );
+for my $lua_file (qw{ corner_cases.lua }){
+    my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
+    my $p = MarpaX::Languages::Lua::AST->new;
 
-$ast = MarpaX::AST->new( $ast );
+    my @ast = $p->parse( $lua_src );
 
-#say $ast->sprint;
+    for my $ast (@ast){
+        #$ast = MarpaX::AST->new( $ast );
+        $ast = MarpaX::AST->new( $$ast );
 
-my %skip_always = map { $_ => 1 } (
-    'statements', 'chunk'
-);
+        #say $ast->sprint;
 
-$ast = $ast->distill({
-    root => 'chunk',
-    skip => sub {
-        my ($ast, $ctx) = @_;
-        my ($node_id) = @$ast;
-        if ( $node_id eq 'exp' ){
-            if (    $ctx->{parent}->id eq 'stat'
-                and $ctx->{parent}->first_child->id eq 'keyword if'){
-#                say qq{#parent:\n}, $ctx->{parent}->sprint, qq{\n#of\n}, $ast->sprint;
-                return 0;
+        my %skip_always = map { $_ => 1 } (
+            'statements', 'chunk'
+        );
+
+        $ast = $ast->distill({
+            root => 'chunk',
+            skip => sub {
+                my ($ast, $ctx) = @_;
+                my ($node_id) = @$ast;
+=pod
+                if ( $node_id eq 'exp' ){
+                    if (    $ctx->{parent}->id eq 'stat'
+                        and $ctx->{parent}->first_child->id eq 'keyword if'){
+        #                say qq{#parent:\n}, $ctx->{parent}->sprint, qq{\n#of\n}, $ast->sprint;
+                        return 0;
+                    }
+                    else{
+                        return 1;
+                    }
+                }
+=cut
+                return exists $skip_always{ $node_id }
             }
-            else{
-                return 1;
-            }
-        }
-        return exists $skip_always{ $node_id }
+        });
+
+        say $ast->sprint;
     }
-});
-
-say $ast->sprint;
-
+}
 
 done_testing();
