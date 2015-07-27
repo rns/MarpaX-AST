@@ -10,8 +10,8 @@ use Marpa::R2;
 
 my $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 
-    :default ::= action => [ name, value ]
-    lexeme default = action => [ name, value] latm => 1
+    :default ::= action => [ name, start, length, value ]
+    lexeme default = action => [ name, start, length, value] latm => 1
 
     start ::= series+
 
@@ -43,7 +43,9 @@ my $ast = $g->parse( \$input, { trace_terminals => 0 } );
 
 use MarpaX::AST;
 
-$ast = MarpaX::AST->new( $$ast );
+$ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
+
+say $ast->sprint;
 
 my $expected_distilled = <<EOS;
  root

@@ -7,10 +7,11 @@ use warnings;
 use Carp;
 use Scalar::Util qw{ blessed };
 
-my $CHILDREN_START;
+# by default, children start at 1 in @$ast
+my $CHILDREN_START = 1;
 
 sub new {
-    my ($class, $ast, %opts) = @_;
+    my ($class, $ast, $opts) = @_;
 
     # scalar $ast means the application needs to create an empty ast
     # and $ast is the root node ID
@@ -18,8 +19,13 @@ sub new {
         $ast = [ $ast ];
     }
 
-    # by default, children start at 1 in @$ast
-    $CHILDREN_START = 1;
+    # change children start index, if set in options
+    if (ref $opts eq "HASH"){
+        if (exists $opts->{CHILDREN_START}){
+            $CHILDREN_START = $opts->{CHILDREN_START};
+        }
+    }
+#    warn $CHILDREN_START;
 
     return MarpaX::AST::bless( $ast, $class );
 }
@@ -106,6 +112,8 @@ sub insert_before_child{
 # return the last child
 sub append_child{
     my ($ast, $child) = @_;
+
+#    warn "# appending child:\n", dumper($child), "\n", "# to ast:\n", dumper($ast);
 
     if (defined $child){
         croak "Child must be a blessed ref, not " . $child unless blessed $child;
@@ -215,7 +223,7 @@ sub do_walk{
         $opts->{visit}->( $ast, $context );
     }
 
-    my ($node_id, @children) = @{ $ast };
+    my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
 
     # possible todo: don't walk into [ 'name', 'value' ] nodes
     unless ( $ast->is_literal ){
@@ -260,7 +268,7 @@ sub distill{
 
     my $class = ref $ast;
 
-    my $root = $class->new( $opts->{root} );
+    my $root = $class->new( [ $opts->{root}, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
     $opts->{literals_as_text} //= 0;
@@ -289,8 +297,13 @@ sub distill{
             $parents->[ $parent_ix + 1 ] =
                 $parents->[ $parent_ix ]->append_child(
                     $class->new(
-                        $ast->is_literal ? $opts->{literals_as_text} ? $children[0] : $ast
-                            : $node_id ) );
+                        $ast->is_literal() ?
+                            $opts->{literals_as_text} ?
+                                [ $children[0], @$ast[1..$CHILDREN_START-1] ]
+                                : $ast
+                            : [ $node_id, @$ast[1..$CHILDREN_START-1] ]
+                    )
+                );
         }
     } );
 
