@@ -7,14 +7,19 @@ use warnings;
 use Carp;
 use Scalar::Util qw{ blessed };
 
+my $CHILDREN_START;
+
 sub new {
-    my ($class, $ast) = @_;
+    my ($class, $ast, %opts) = @_;
 
     # scalar $ast means the application needs to create an empty ast
     # and $ast is the root node ID
     unless (ref $ast){
         $ast = [ $ast ];
     }
+
+    # by default, children start at 1 in @$ast
+    $CHILDREN_START = 1;
 
     return MarpaX::AST::bless( $ast, $class );
 }
@@ -47,7 +52,7 @@ sub id{
 # return true if the node is literal node -- [ 'name', 'value' ]
 sub is_literal{
     my ($ast) = @_;
-    my ($node_id, @children) = @{ $ast };
+    my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
     return ( (@children == 1) and (not ref $children[0]) );
 }
 
@@ -66,7 +71,7 @@ sub child{
     $ix++ unless $ix == -1;
     if (defined $child){
         if (ref $child eq "ARRAY"){
-            splice @$ast, $ix, 1, @$child;
+            splice @$ast, $ix, $CHILDREN_START, @$child;
         }
         else{
            croak "Child must be a blessed ref, not " . $child unless blessed $child;
@@ -94,8 +99,7 @@ sub last_child{
 # return splice() return value
 sub insert_before_child{
     my ($ast, $ix, $child) = @_;
-    $ix++ if $ix == 0; # a node is an array and children start at position 1
-    return splice @$ast, $ix, 0, $child;
+    return splice @$ast, $CHILDREN_START + $ix, 0, $child;
 }
 
 # append $child to children
@@ -115,7 +119,7 @@ sub append_child{
 # return children
 sub children{
     my ($ast, $children) = @_;
-    my ($node, @children) = @$ast;
+    my ($node, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
     if (defined $children){
         if (ref $children eq "CODE"){
             my $found = [];
@@ -124,7 +128,7 @@ sub children{
             }
         }
         else {
-            splice @$ast, 1, @$ast - 1, @$children;
+            splice @$ast, $CHILDREN_START, $#{$ast}, @$children;
         }
     }
     return \@children;
@@ -142,7 +146,7 @@ sub remove_children{
     croak "Arg 2 must be defined as a CODE ref." unless defined $remove;
     croak "Arg 2 must be a ref to CODE, not " . ref $remove unless ref $remove eq "CODE";
 
-    my ($node_id, @children) = @$ast;
+    my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
     my @new_children;
     for my $child (@children){
         next if $remove->($child);
@@ -158,7 +162,7 @@ sub remove_children{
 sub remove_child{
     my ($ast, $ix) = @_;
     croak "Arg 2 must be defined as an index of the child to be removed." unless defined $ix;
-    return splice ( @$ast, $ix + 1, 1 );
+    return splice ( @$ast, $ix + $CHILDREN_START, 1 );
 }
 
 sub assert_options{
@@ -236,7 +240,7 @@ sub sprint{
     # set visitor
     $opts->{visit} = sub {
         my ($ast, $context) = @_;
-        my ($node_id, @children) = @$ast;
+        my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
             $s .= qq{$indent $node_id '$children[0]'\n};
@@ -271,7 +275,7 @@ sub distill{
             } : $opts->{skip},
         visit => sub {
             my ($ast, $ctx) = @_;
-            my ($node_id, @children) = @$ast;
+            my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
 
             state $dont_visit = { map { $_ => 1 } @{ $opts->{dont_visit} } };
             state $dont_visit_ix = keys %$dont_visit;
