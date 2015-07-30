@@ -75,7 +75,21 @@ my $dast = $ast->distill({
     literals_as_text => 1,
 });
 
+# todo: make a data structure and test with is_deeply
+=pod DSL to convert AST to a data structure
+
+ node_id/node_id => hash/pair
+
+ node_id => array/item
+
+ node_id => pass-through
+
+ ... all unspecified node ID’s => pass-through
+
+=cut
+
 #say MarpaX::AST::dumper($dast);
+say $dast->sprint;
 
 my $got_distilled = $dast->sprint;
 

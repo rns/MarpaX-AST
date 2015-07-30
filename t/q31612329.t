@@ -111,22 +111,23 @@ sub make_hash_map{
         }
         elsif ($id eq 'pair' or $id eq 'signature_item'){
 
-# this fails
+# todo: this fails
 #            my ($k, $v) = $dast->children();
 # this works
             my ($k, $v) = map { $dast->child($_) } (0, 1);
 
-#            warn "# $id:\n", $k->text, $v->sprint;
-            # todo: why this returns undef?
+# todo: why this returns undef?
 #            warn $v->is_literal;
+
             return $k->text => make_hash_map($v);
         }
         elsif ($id eq 'array'){
+            # todo: item nodes not sorted by index
             return [ map { make_hash_map($_) } @$children ];
         }
         elsif ($id eq 'item'){
             my ($i, $v) = map { $dast->child($_) } (0, 1);
-#            warn "# $id:\n", $i->text, $v->sprint;
+            # this assumes that item nodes are sorted by index
             return make_hash_map($v);
         }
         else {
@@ -141,6 +142,8 @@ sub make_hash_map{
 my $got_hash_map = make_hash_map($dast);
 
 #warn "got_hash_map: ", MarpaX::AST::dumper( $got_hash_map );
+
+# todo: notify the asker ?
 
 my $expected_hash_map = {
   ARPResolvedHardwareAddress => "00:1b:c0:4a:82:f9",
