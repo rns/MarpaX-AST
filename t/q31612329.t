@@ -107,10 +107,15 @@ sub make_hash_map{
             return { map { make_hash_map($_) } @$children };
         }
         elsif ($id eq 'pair' or $id eq 'signature_item'){
-            my ($k, $v) = @{ $dast->children($_) };
-            warn "# $id:\n", $k->text, $v->sprint;
+
+# this fails
+#            my ($k, $v) = $dast->children();
+# this works
+            my ($k, $v) = map { $dast->child($_) } (0, 1);
+
+#            warn "# $id:\n", $k->text, $v->sprint;
             # todo: why this returns undef?
-            warn $v->is_literal;
+#            warn $v->is_literal;
             return $k->text => make_hash_map($v);
         }
         elsif ($id eq 'array'){
@@ -118,7 +123,7 @@ sub make_hash_map{
         }
         elsif ($id eq 'item'){
             my ($i, $v) = map { $dast->child($_) } (0, 1);
-            warn "# $id:\n", $i->text, $v->sprint;
+#            warn "# $id:\n", $i->text, $v->sprint;
             return make_hash_map($v);
         }
         else {
@@ -130,6 +135,13 @@ sub make_hash_map{
     }
 }
 
-say MarpaX::AST::dumper( make_hash_map($dast) );
+my $got_hash_map = make_hash_map($dast);
+warn ref $got_hash_map;
+
+warn "# make_hash_map:\n", MarpaX::AST::dumper($dast);
+
+say $dast->sprint;
+
+warn "# got hash map:\n", MarpaX::AST::dumper( make_hash_map($dast) );
 
 done_testing();

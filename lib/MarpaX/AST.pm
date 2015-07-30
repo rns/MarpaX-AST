@@ -75,24 +75,24 @@ sub is_literal{
 
 sub descendant{
     my ($ast, $level) = @_;
-    $ast = $ast->[1] for (1..$level);
+    $ast = $ast->[$CHILDREN_START] for (1..$level);
     return $ast;
 }
 
 # set the child at index $ix if caller provides it,
 # if Arg3 is an array ref, use splice
 # to expand child at $ix with Arg3's contents
-# return the child at index $ix
+# return the child at index $ix starting at 0
 sub child{
     my ($ast, $ix, $child) = @_;
-    $ix++ unless $ix == -1;
+    $ix += $CHILDREN_START unless $ix == -1;
     if (defined $child){
         if (ref $child eq "ARRAY"){
-            splice @$ast, $ix, $CHILDREN_START, @$child;
+            splice @$ast, $ix, 1, @$child; # replace 1 element with list
         }
         else{
            croak "Child must be a blessed ref, not " . $child unless blessed $child;
-            $ast->[$ix] = $child;
+           $ast->[$ix] = $child;  # replace 1 element with blessed scalar
         }
     }
     return $ast->[$ix];
@@ -136,6 +136,7 @@ sub append_child{
 # set the node's children to $children array ref if caller provides it,
 # if $children is a CODE ref, returns the nodes' children for which $children->($child) returns 1
 # return children
+# todo: rename $children to $new_children
 sub children{
     my ($ast, $children) = @_;
     my ($node, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
@@ -146,8 +147,8 @@ sub children{
                 push @$found, $children[$ix] if $children->( $children[$ix], $ix );
             }
         }
-        else {
-            splice @$ast, $CHILDREN_START, $#{$ast}, @$children;
+        elsif (ref $children eq "ARRAY") {
+            splice @$ast, $CHILDREN_START, @$ast-$CHILDREN_START, @$children; # replace all children
         }
     }
     return \@children;
