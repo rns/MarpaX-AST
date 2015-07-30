@@ -42,7 +42,12 @@ sub MarpaX::AST::bless{
     bless $ast, $class;
     # bless descendants
     $ast->walk( {
-        visit => sub { CORE::bless $_[0], $class unless blessed $_[0] }
+        visit => sub {
+            if ( ref($_[0]) eq "ARRAY" and not blessed($_[0]) ) {
+#                warn dumper($_[0]);
+                CORE::bless $_[0], $class;
+            }
+        }
     } );
 
     return $ast;
@@ -63,6 +68,8 @@ sub id{
 sub is_literal{
     my ($ast) = @_;
     my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
+#    warn "is_literal: $node_id, @children", $node_id eq '#text';
+    return 1 if $node_id eq '#text';
     return ( (@children == 1) and (not ref $children[0]) );
 }
 
@@ -240,6 +247,11 @@ sub do_walk{
     $opts->{depth}-- unless $skip;
 }
 
+sub text{
+    my ($ast) = @_;
+    return $ast->first_child;
+}
+
 sub sprint{
     my ($ast, $opts ) = @_;
 
@@ -255,6 +267,7 @@ sub sprint{
         my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
+            warn "$node_id, $children[0]";
             $s .= qq{$indent $node_id '$children[0]'\n};
         }
         else{
@@ -301,10 +314,7 @@ sub distill{
             $parents->[ $parent_ix + 1 ] =
                 $parents->[ $parent_ix ]->append_child(
                     $class->new(
-                        $ast->is_literal() ?
-                            $opts->{literals_as_text} ?
-                                [ $children[0], @$ast[1..$CHILDREN_START-1] ]
-                                : $ast
+                        $ast->is_literal() ? $ast
                             : [ $node_id, @$ast[1..$CHILDREN_START-1] ]
                     )
                 );

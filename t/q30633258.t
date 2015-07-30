@@ -47,7 +47,8 @@ use MarpaX::AST;
 
 $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
-say $ast->sprint;
+#say MarpaX::AST::dumper($ast);
+# say $ast->sprint;
 
 my $expected_distilled = <<EOS;
  root
@@ -65,14 +66,17 @@ my $expected_distilled = <<EOS;
      This is some description
 EOS
 
-my $got_distilled = $ast->distill({
+my $dast = $ast->distill({
     root => 'root',
     skip => [ 'start', 'values', 'value', 'subseries' ],
     dont_visit => [
         'series'
         ],
-    literals_as_text => 1,
-})->sprint;
+});
+
+say MarpaX::AST::dumper($dast);
+
+my $got_distilled = $dast->sprint;
 
 is $got_distilled, $expected_distilled, "complex-string-splitting, SO Question 30633258";
 

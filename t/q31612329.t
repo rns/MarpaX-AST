@@ -10,16 +10,12 @@ use Test::More;
 
 use Marpa::R2;
 
-SKIP: {
-
-skip "unimplemented", 1;
-
 my $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 
-    :default ::= action => [ name, value]
-    lexeme default = action => [ name, value] latm => 1
+    :default ::= action => [ name, value ]
+    lexeme default = action => [ name, value ] latm => 1
 
-    scutil ::= 'scutil' '> open' '> show' path '<dictionary>' '{' pairs '}'
+    scutil ::= 'scutil' '> open' '> show' path dict
     path ~ [\w/:\-]+
 
     pairs ::= pair+
@@ -90,15 +86,50 @@ my $ast = $g->parse( \$input, { trace_terminals => 0 } );
 
 $ast = MarpaX::AST->new( $$ast );
 
-say $ast->sprint;
+#say MarpaX::AST::dumper($ast);
 
-my $got_distilled = $ast->distill({
-    root => 'root',
-    skip => [ '#text', 'value', 'item' ],
-})->sprint;
+my $dast = $ast->distill({
+    root => '',
+    skip => [ 'path', '#text', 'value', 'items', 'pairs', 'signature_item_value' ],
+});
 
-say $ast->sprint;
+say "# distilled:\n", MarpaX::AST::dumper($dast);
 
+say $dast->sprint;
+
+sub make_hash_map{
+    my ($dast) = @_;
+
+    if (not $dast->is_literal){
+        my $id = $dast->id;
+        my $children = $dast->children;
+        if ($id eq 'dict' or $id eq 'signature'){
+            return { map { make_hash_map($_) } @$children };
+        }
+        elsif ($id eq 'pair' or $id eq 'signature_item'){
+            my ($k, $v) = @{ $dast->children($_) };
+            warn "# $id:\n", $k->text, $v->sprint;
+            # todo: why this returns undef?
+            warn $v->is_literal;
+            return $k->text => make_hash_map($v);
+        }
+        elsif ($id eq 'array'){
+            return [ map { make_hash_map($_) } @$children ];
+        }
+        elsif ($id eq 'item'){
+            my ($i, $v) = map { $dast->child($_) } (0, 1);
+            warn "# $id:\n", $i->text, $v->sprint;
+            return make_hash_map($v);
+        }
+        else {
+            return map { make_hash_map($_) } @$children;
+        }
+    }
+    else{
+        return $dast->text;
+    }
 }
+
+say MarpaX::AST::dumper( make_hash_map($dast) );
 
 done_testing();
