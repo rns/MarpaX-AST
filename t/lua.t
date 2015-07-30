@@ -42,7 +42,7 @@ for my $lua_file (qw{ corner_cases.lua }){
 
     for my $ast (@ast){
         #$ast = MarpaX::AST->new( $ast );
-        $ast = MarpaX::AST->new( $$ast );
+        $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
         #say $ast->sprint;
 
