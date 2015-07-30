@@ -19,14 +19,9 @@ my $CHILDREN_START = 1;
     in the above case.
 =cut
 
+# $ast must be [ $node_id, $child1, child2 ] or [ '#text', 'literal_text' ]
 sub new {
     my ($class, $ast, $opts) = @_;
-
-    # scalar $ast means the application needs to create an empty ast
-    # and $ast is the root node ID
-    unless (ref $ast){
-        $ast = [ $ast ];
-    }
 
     # change children start index, if set in options
     if (ref $opts eq "HASH"){
