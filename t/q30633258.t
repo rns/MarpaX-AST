@@ -75,6 +75,9 @@ my $dast = $ast->distill({
     literals_as_text => 1,
 });
 
+# todo: is literals_as_text really needed?
+# it may violate start/length parent/child relations
+
 # todo: make a data structure and test with is_deeply
 =pod DSL to convert AST to a data structure
 
