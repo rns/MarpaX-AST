@@ -48,7 +48,7 @@ use MarpaX::AST;
 $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
 #say MarpaX::AST::dumper($ast);
-# say $ast->sprint;
+#say $ast->sprint;
 
 my $expected_distilled = <<EOS;
  root
@@ -72,9 +72,10 @@ my $dast = $ast->distill({
     dont_visit => [
         'series'
         ],
+    literals_as_text => 1,
 });
 
-say MarpaX::AST::dumper($dast);
+#say MarpaX::AST::dumper($dast);
 
 my $got_distilled = $dast->sprint;
 

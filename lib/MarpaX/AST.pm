@@ -222,7 +222,10 @@ sub walk{
 sub do_walk{
     my ($ast, $opts ) = @_;
 
-    $ast = CORE::bless [ '#text', $ast ], __PACKAGE__ unless ref $ast;
+    unless (ref $ast){
+        croak "bare literals aren't compatible with CHILDREN_START=CHILDREN_START: use literals_as_text in distill()" if $CHILDREN_START > 1;
+        $ast = CORE::bless [ '#text', $ast ], __PACKAGE__ ;
+    }
 
     state $context;
     $context->{depth} = $opts->{depth};
@@ -268,7 +271,7 @@ sub sprint{
         my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
-            warn "$node_id, $children[0]";
+#            warn "$node_id, $children[0]";
             $s .= qq{$indent $node_id '$children[0]'\n};
         }
         else{
@@ -315,7 +318,10 @@ sub distill{
             $parents->[ $parent_ix + 1 ] =
                 $parents->[ $parent_ix ]->append_child(
                     $class->new(
-                        $ast->is_literal() ? $ast
+                        $ast->is_literal() ?
+                            $opts->{literals_as_text} ?
+                                [ $children[0], @$ast[1..$CHILDREN_START-1] ]
+                                : $ast
                             : [ $node_id, @$ast[1..$CHILDREN_START-1] ]
                     )
                 );

@@ -93,9 +93,9 @@ my $dast = $ast->distill({
     skip => [ 'path', '#text', 'value', 'items', 'pairs', 'signature_item_value' ],
 });
 
-say "# distilled:\n", MarpaX::AST::dumper($dast);
+#say "# distilled:\n", MarpaX::AST::dumper($dast);
 
-say $dast->sprint;
+#say $dast->sprint;
 
 sub make_hash_map{
     my ($dast) = @_;
@@ -103,7 +103,10 @@ sub make_hash_map{
     if (not $dast->is_literal){
         my $id = $dast->id;
         my $children = $dast->children;
-        if ($id eq 'dict' or $id eq 'signature'){
+        if ($id eq 'scutil'){ # root -- just pass throuth
+            return make_hash_map(@$children);
+        }
+        elsif ($id eq 'dict' or $id eq 'signature'){
             return { map { make_hash_map($_) } @$children };
         }
         elsif ($id eq 'pair' or $id eq 'signature_item'){
@@ -127,7 +130,7 @@ sub make_hash_map{
             return make_hash_map($v);
         }
         else {
-            return map { make_hash_map($_) } @$children;
+            return make_hash_map($_) for @$children;
         }
     }
     else{
@@ -136,12 +139,37 @@ sub make_hash_map{
 }
 
 my $got_hash_map = make_hash_map($dast);
-warn ref $got_hash_map;
 
-warn "# make_hash_map:\n", MarpaX::AST::dumper($dast);
+#warn "got_hash_map: ", MarpaX::AST::dumper( $got_hash_map );
 
-say $dast->sprint;
+my $expected_hash_map = {
+  ARPResolvedHardwareAddress => "00:1b:c0:4a:82:f9",
+  ARPResolvedIPAddress => "10.10.0.254",
+  AdditionalRoutes => [
+    {
+      DestinationAddress => "10.10.0.146",
+      SubnetMask => "255.255.255.255"
+    },
+    {
+      DestinationAddress => "169.254.0.0",
+      SubnetMask => "255.255.0.0"
+    }
+  ],
+  Addresses => [
+    "10.10.0.146"
+  ],
+  ConfirmedInterfaceName => "en0",
+  InterfaceName => "en0",
+  NetworkSignature => {
+    "IPv4.Router" => "10.10.0.254",
+    "IPv4.RouterHardwareAddress" => "00:1b:c0:4a:82:f9"
+  },
+  Router => "10.10.0.254",
+  SubnetMasks => [
+    "255.255.255.0"
+  ]
+};
 
-warn "# got hash map:\n", MarpaX::AST::dumper( make_hash_map($dast) );
+is_deeply $expected_hash_map, $got_hash_map, "SO question 31612329";
 
 done_testing();
