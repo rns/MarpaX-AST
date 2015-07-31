@@ -240,11 +240,11 @@ sub do_walk{
 
     my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
 
-    # possible todo: don't walk into [ 'name', 'value' ] nodes
+    # don't walk into [ 'name', 'value' ] literal nodes
     unless ( $ast->is_literal ){
+        # set siblings and parents for context and walk on
         $context->{parent}   = $ast;
         $context->{siblings} = \@children;
-        # todo: set siblings and parents for context
         do_walk( $_, $opts  ) for @children;
     }
 

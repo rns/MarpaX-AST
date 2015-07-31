@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Test::More;
+use Test::Differences;
 
 use Marpa::R2;
 
@@ -31,10 +32,15 @@ sub slurp_file{
 }
 
 #my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
-#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
-my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
+#my @lua_files = qw{ echo.lua };
 
-for my $lua_file (qw{ corner_cases.lua }){
+my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
+my @lua_files = qw{ constructs.lua };
+
+#my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
+#my @lua_files = qw{ corner_cases.lua };
+
+for my $lua_file (@lua_files){
     my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
     my $p = MarpaX::Languages::Lua::AST->new;
 
@@ -46,7 +52,7 @@ for my $lua_file (qw{ corner_cases.lua }){
         #$ast = MarpaX::AST->new( $ast );
         $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
-        say MarpaX::AST::dumper($ast);
+#        say MarpaX::AST::dumper($ast);
         #say $ast->sprint;
         my %skip_always = map { $_ => 1 } (
             'statements', 'chunk'
@@ -73,7 +79,7 @@ for my $lua_file (qw{ corner_cases.lua }){
             }
         });
 
-        say $ast->sprint;
+#        say $ast->sprint;
 
         # walk ast and see which nodes have discardables before/after them
         my $src = '';
@@ -103,8 +109,8 @@ for my $lua_file (qw{ corner_cases.lua }){
                     $visited->{$id_before}++;
                 }
 
-                say "$node_id, $start, $length, ", $ast->text;
-                say qq{src: '$node_text'};
+#                say "$node_id, $start, $length, ", $ast->text;
+#                say qq{src: '$node_text'};
 
                 # see if there is a discardable after
                 my $end = $start + $length;
@@ -123,9 +129,9 @@ for my $lua_file (qw{ corner_cases.lua }){
         }; ## opts
         $ast->walk( $opts );
 
-        say qq{src: '$src'};
-        say qq{src: '$lua_src'};
-        is $src, $lua_src, qq{$lua_dir/$lua_file};
+#        say qq{src: '$src'};
+#        say qq{src: '$lua_src'};
+        eq_or_diff $src, $lua_src, qq{$lua_dir/$lua_file};
     }
 }
 
