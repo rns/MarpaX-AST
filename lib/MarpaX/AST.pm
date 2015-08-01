@@ -399,10 +399,7 @@ sub put{
     my ($self, $start, $length, $discardable) = @_;
 }
 
-sub get{
-    my ($self, $id) = @_;
-    return $self->{nodes}->[$id];
-}
+sub get     { $_[0]->{nodes}->[$_[1]] }
 
 sub type    { $_[1]->[0] }
 sub start   { $_[1]->[1] }
