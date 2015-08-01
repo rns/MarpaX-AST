@@ -34,26 +34,26 @@ sub slurp_file{
 #my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
 #my @lua_files = qw{ echo.lua };
 
-my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
-my @lua_files = qw{ constructs.lua };
+#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
+#my @lua_files = qw{ constructs.lua };
 
-#my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
-#my @lua_files = qw{ corner_cases.lua };
+my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
+my @lua_files = qw{ corner_cases.lua };
 
 for my $lua_file (@lua_files){
     my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
     my $p = MarpaX::Languages::Lua::AST->new;
 
     my @ast = $p->parse( $lua_src );
-    say MarpaX::AST::dumper($p->{discardables});
+#    say MarpaX::AST::dumper($p->{discardables});
     my $discardables = $p->{discardables};
 
     for my $ast (@ast){
-        #$ast = MarpaX::AST->new( $ast );
+
         $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
 #        say MarpaX::AST::dumper($ast);
-        #say $ast->sprint;
+#        say $ast->sprint;
         my %skip_always = map { $_ => 1 } (
             'statements', 'chunk'
         );
