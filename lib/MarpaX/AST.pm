@@ -348,5 +348,74 @@ sub dumper{
   }
 }
 
+package MarpaX::AST::Discardables;
+
+use strict;
+use warnings;
+
+=pod Overview
+
+A discardable is an input span typically discarded by a parser,
+e.g. whitespace or comment. For a particular input span ($start, $end)
+we need to know if it has a discradable before or after it, i.e.
+ending at $start or starting at $end.
+
+discardables:
+    handle => [ $type, $start, $length, $value ];
+
+$type is node id: 'whitespace' or 'comment'
+$value is input span starting at $start and ending at $start + $length
+
+starts ($pos) -- returns string starting at $pos or empty string if there is none
+
+=cut
+
+sub new{
+    my ($class) = @_;
+    my $self = {};
+    $self->{nodes} = [];
+    $self->{starts} = {};
+    bless $self, $class;
+    return $self;
+}
+
+sub post{
+    my ($self, $type, $start, $length, $value) = @_;
+    push @{ $self->{nodes} }, [ $type, $start, $length, $value ];
+    my $id = scalar @{ $self->{nodes} } - 1;
+    my $prev_id = $id - 1;
+    # handle contiguous discardables
+    my $curr_d = $self->get($id);
+    my $prev_d = $self->get($prev_id);
+#    if ( $curr_d->)
+    $self->{starts}->{$start} = $id;
+    $self->{ends}->{$start + $length} = $id;
+    return $id;
+}
+
+sub put{
+    my ($self, $start, $length, $discardable) = @_;
+}
+
+sub get{
+    my ($self, $id) = @_;
+    return $self->{nodes}->[$id];
+}
+
+sub type    { $_[1]->[0] }
+sub start   { $_[1]->[1] }
+sub length  { $_[1]->[2] }
+sub value   { $_[1]->[3] }
+
+sub starts{
+    my ($self, $pos) = @_;
+    return $self->{starts}->{$pos};
+}
+
+sub ends{
+    my ($self, $pos) = @_;
+    return $self->{ends}->{$pos};
+}
+
 1;
 
