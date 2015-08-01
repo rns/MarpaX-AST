@@ -26,6 +26,9 @@ sub new {
     # change children start index, if set in options
     if (ref $opts eq "HASH"){
         if (exists $opts->{CHILDREN_START}){
+            croak "No children at CHILDREN_START $opts->{CHILDREN_START}, " .
+                "check ':default ::= action =>' arrays in the grammar"
+                    if @$ast < $opts->{CHILDREN_START};
             $CHILDREN_START = $opts->{CHILDREN_START};
         }
     }
