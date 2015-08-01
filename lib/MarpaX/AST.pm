@@ -360,13 +360,15 @@ e.g. whitespace or comment. For a particular input span ($start, $end)
 we need to know if it has a discradable before or after it, i.e.
 ending at $start or starting at $end.
 
-discardables:
-    handle => [ $type, $start, $length, $value ];
+discardables are stored as an array of AST nodes:
+    [
+        [ $type, $start, $length, $value ]
+    ]
+the id is index in the array
 
-$type is node id: 'whitespace' or 'comment'
+# todo: use lexeme ID’s, <short/long comment>
+$type is node_id: currently 'whitespace' or 'comment'
 $value is input span starting at $start and ending at $start + $length
-
-starts ($pos) -- returns string starting at $pos or empty string if there is none
 
 =cut
 
