@@ -45,7 +45,7 @@ for my $lua_file (@lua_files){
     my $p = MarpaX::Languages::Lua::AST->new;
 
     my @ast = $p->parse( $lua_src );
-#    say MarpaX::AST::dumper($p->{discardables});
+    warn MarpaX::AST::dumper($p->{discardables});
     my $discardables = $p->{discardables};
 
     for my $ast (@ast){
@@ -103,13 +103,15 @@ for my $lua_file (@lua_files){
                 my $id_before = $discardables->ends($start);
                 if ( defined $id_before and not exists $visited->{$id_before}){
                     my $d = $discardables->get($id_before);
+                    # todo: check if discardables are merged and prepend the entire span
+                    # ref $d eq "MarpaX::AST::Discardables"
 #                    say qq{\nbefore: $d->[0] '$d->[3]'};
                     $node_text = $d->[3] . $node_text;
 #                    say qq{src: '$node_text'};
                     $visited->{$id_before}++;
                 }
 
-#                say "$node_id, $start, $length, ", $ast->text;
+                say "$node_id, $start, $length, ", $ast->text;
 #                say qq{src: '$node_text'};
 
                 # see if there is a discardable after

@@ -1,6 +1,7 @@
 local t = loadstring(s..'}')()
 
 -- defines a factorial function
+-- continuation of the above comment
 function fact (n)
   if n == 0 then
     return 1
@@ -8,3 +9,7 @@ function fact (n)
     return n * fact(n-1)
   end
 end
+
+--[[
+  long end-of-file comment
+--]]
