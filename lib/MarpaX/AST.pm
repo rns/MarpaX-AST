@@ -353,6 +353,8 @@ package MarpaX::AST::Discardables;
 use strict;
 use warnings;
 
+use Carp;
+
 =pod Overview
 
 A discardable is an input span typically discarded by a parser,
@@ -375,15 +377,12 @@ use constant START      => 1;
 use constant LENGTH     => 2;
 use constant VALUE      => 3;
 
-use constant SPAN_NODE_ID => 'SPAN';
-
 sub new{
     my ($class) = @_;
     my $self = {};
     $self->{nodes}  = []; # discardable nodes in the order they’ve been post()'ed
     $self->{starts} = {}; # id’s of nodes starting at a certain position
     $self->{ends}   = {}; # id’s of nodes ending at a certain position
-    $self->{span}   = [ SPAN_NODE_ID, 0, 0, '' ]; # all discardables treated as single span
     bless $self, $class;
     return $self;
 }
@@ -392,34 +391,25 @@ sub post{
     my ($self, $node_id, $start, $length, $value) = @_;
     push @{ $self->{nodes} }, [ $node_id, $start, $length, $value ];
     my $id = scalar @{ $self->{nodes} } - 1;
-    my $prev_id = $id - 1;
-    if ( $self->start($id) == $self->start($prev_id) + $self->length($prev_id) ){
-        warn "contiguous discardable $prev_id, $id at ", $self->start($prev_id) + $self->length($prev_id);
+    my $prev_id     = $id - 1;
+    my $prev_length = $self->length($prev_id);
+    my $prev_start  = $self->start($prev_id);
+    if ( $self->start($id) == $prev_start + $prev_length ){
         # merge contiguous discardables have the same node_id
         if ($self->node_id($id) eq $self->node_id($prev_id)){
-            warn "contiguous discardable $prev_id, $id having the same node_id: ", $self->node_id($id), " at ", $self->start($prev_id) + $self->length($prev_id);
-            # save length of previous discardable
-            my $prev_length = $self->length($prev_id);
+            warn "contiguous discardable $prev_id, $id: ", $self->node_id($id), " at ", $prev_start + $prev_length;
             # merge value’s and length’s
             $self->value($prev_id, $self->value($prev_id) . $self->value($id));
-            $self->length($prev_id, $self->length($prev_id) + $self->length($id));
+            $self->length($prev_id, $prev_length + $self->length($id));
             # remove merged contiguous discardable
             pop @{ $self->{nodes} };
             # update previous discardable’s end
             delete $self->{ends}->{$prev_length};
-            $self->{ends}->{$self->start($prev_id) + $self->length($prev_id)} = $prev_id;
-            # update span
-            # ...
+            $self->{ends}->{$prev_start + $self->length($prev_id)} = $prev_id;
             # the new discardable node is now merged
             return $prev_id;
         }
-        # store contiguous discardables of different node_id’s recursively
-        else{
-            my $span = MarpaX::AST::Discardables->new;
-        }
     }
-    # update span
-    # ...
     $self->{starts}->{$start} = $id;
     $self->{ends}->{$start + $length} = $id;
     return $id;
@@ -440,8 +430,9 @@ sub get {
 # return attribute $ix of discardable $id
 sub attr {
     my ($self, $id, $val, $attr_ix) = @_;
-    defined $val and $self->get($id)->[$attr_ix] = $val;
-    return $self->get($id)->[$attr_ix];
+    my $discardable = ref $id eq "ARRAY" ? $id : $self->get($id);
+    defined $val and $discardable->[$attr_ix] = $val;
+    return $discardable->[$attr_ix];
 }
 
 sub node_id {
@@ -459,30 +450,14 @@ sub length {
     $self->attr($id, $new_length, LENGTH)
 }
 
+sub end {
+    my ($self, $id) = @_;
+    $self->start($id) + $self->length($id)
+}
+
 sub value {
     my ($self, $id, $new_value) = @_;
     $self->attr($id, $new_value, VALUE)
-}
-
-# returns start and length of all discardable nodes viewed as a single span
-sub span{
-    my ($self) = @_;
-    my $span_start = $self->start(0);
-    my $span_length = 0;
-    for my $node ( @{ $self->{nodes} } ){
-        $span_length += $node->[2];
-    }
-    return ($span_start, $span_length);
-}
-
-# returns value of all discardable nodes viewed as a single span
-sub span_value{
-    my ($self) = @_;
-    my $span_value = 0;
-    for my $node ( @{ $self->{nodes} } ){
-        $span_value .= $node->[3];
-    }
-    return $span_value;
 }
 
 # returns id of discardable starting at $pos, undef otherwise
@@ -495,6 +470,44 @@ sub starts{
 sub ends{
     my ($self, $pos) = @_;
     return $self->{ends}->{$pos};
+}
+
+# returns a ref to array of id’s a span of contiguous discardables
+# starting at $head_id or $head_id if there is no such span
+sub span{
+    my ($self, $opts) = @_;
+    # set start and direction (negative $step means backwards)
+    my $curr_id;
+    my $step;
+    if ( exists $opts->{start} ){
+        $curr_id = $opts->{start};
+        $step = 1;
+    }
+    elsif ( exists $opts->{end} ){
+        $curr_id = $opts->{start};
+        $step = -1;
+    }
+    else{
+        croak "start or end id must be defined";
+    }
+    # fill span
+    my $span = [ ];
+    for (
+            my $next_id = $curr_id;
+            my $next_node = $self->get($next_id);
+            $next_id += $step
+        )
+    {
+#        warn qq{$next_id, $curr_id};
+#        warn $self->start($next_node);
+#        warn $self->end($curr_id);
+        # loop while discardables are contiguous, i.e.
+        # next node starts after the current ends
+        last if $next_node > $curr_id and $self->start($next_node) > $self->end($curr_id);
+        push @$span, $next_id;
+        $curr_id = $next_id;
+    }
+    return $span;
 }
 
 1;

@@ -82,18 +82,32 @@ for my $lua_file (@lua_files){
 #        say $ast->sprint;
 
         # walk ast and see which nodes have discardables before/after them
+=pod
+
+=cut
         my $src = '';
-
-        my $d0 = $discardables->starts(0);
-        $src = $d0->[3] if defined $d0;
-
         my $visited = {};
+        my $last_literal_node;
+
+        # discardable head
+        my $d_head_id = $discardables->starts(0);
+        if (defined $d_head_id){
+            my $span = $discardables->span( { start => $d_head_id } );
+            warn @$span;
+            for my $span_id (@$span){
+                last if exists $visited->{$span_id};
+                $src .= $discardables->value($span_id);
+                $visited->{$span_id}++;
+            }
+        }
 
         my $opts = {
             visit => sub {
                 my ($ast, $ctz) = @_;
 
                 return unless $ast->is_literal;
+
+                $last_literal_node = $ast;
 
                 my ($node_id, $start, $length, @children) = @$ast;
 
@@ -102,13 +116,20 @@ for my $lua_file (@lua_files){
                 # see if there is a discardable before
                 my $id_before = $discardables->ends($start);
                 if ( defined $id_before and not exists $visited->{$id_before}){
+                    my $span = $discardables->span( { end => $id_before } );
+                    warn @$span;
+                    for my $span_id (@$span){
+                        last if exists $visited->{$span_id};
+                        $node_text = $discardables->value($span_id) . $node_text;
+                        $visited->{$span_id}++;
+                    }
+=pod
                     my $d = $discardables->get($id_before);
-                    # todo: check if discardables are merged and prepend the entire span
-                    # ref $d eq "MarpaX::AST::Discardables"
 #                    say qq{\nbefore: $d->[0] '$d->[3]'};
                     $node_text = $d->[3] . $node_text;
 #                    say qq{src: '$node_text'};
                     $visited->{$id_before}++;
+=cut
                 }
 
                 say "$node_id, $start, $length, ", $ast->text;
@@ -118,11 +139,20 @@ for my $lua_file (@lua_files){
                 my $end = $start + $length;
                 my $id_after = $discardables->starts($end);
                 if ( defined $id_after and not exists $visited->{$id_after} ){
+                    my $span = $discardables->span( { start => $id_after } );
+#                    warn @$span;
+                    for my $span_id (@$span){
+                        last if exists $visited->{$span_id};
+                        $node_text .= $discardables->value($span_id);
+                        $visited->{$span_id}++;
+                    }
+=pod
                     my $d = $discardables->get($id_after);
 #                    say qq{after: $d->[0] '$d->[3]'};
                     $node_text = $node_text . $d->[3];
 #                    say qq{src: '$node_text'};
                     $visited->{$id_after}++;
+=cut
                 }
 
                 $src .= $node_text;
