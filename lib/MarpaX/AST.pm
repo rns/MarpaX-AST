@@ -484,7 +484,7 @@ sub span{
         $step = 1;
     }
     elsif ( exists $opts->{end} ){
-        $curr_id = $opts->{start};
+        $curr_id = $opts->{end};
         $step = -1;
     }
     else{
@@ -498,12 +498,18 @@ sub span{
             $next_id += $step
         )
     {
-#        warn qq{$next_id, $curr_id};
-#        warn $self->start($next_node);
-#        warn $self->end($curr_id);
+        warn qq{$next_id, $curr_id};
+        warn $self->start($next_node);
+        warn $self->end($curr_id);
         # loop while discardables are contiguous, i.e.
-        # next node starts after the current ends
-        last if $next_node > $curr_id and $self->start($next_node) > $self->end($curr_id);
+        if ($step > 0) {
+            # next node starts after the current ends
+            last if $next_node > $curr_id and $self->start($next_node) > $self->end($curr_id);
+        }
+        elsif ($step < 0) {
+            # next node ends after the current starts
+            last if $next_node < $curr_id and $self->end($next_node) < $self->start($curr_id);
+        }
         push @$span, $next_id;
         $curr_id = $next_id;
     }
