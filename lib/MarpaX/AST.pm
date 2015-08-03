@@ -397,7 +397,7 @@ sub post{
     if ( $self->start($id) == $prev_start + $prev_length ){
         # merge contiguous discardables have the same node_id
         if ($self->node_id($id) eq $self->node_id($prev_id)){
-            warn "contiguous discardable $prev_id, $id: ", $self->node_id($id), " at ", $prev_start + $prev_length;
+#            warn "contiguous discardable $prev_id, $id: ", $self->node_id($id), " at ", $prev_start + $prev_length;
             # merge value’s and length’s
             $self->value($prev_id, $self->value($prev_id) . $self->value($id));
             $self->length($prev_id, $prev_length + $self->length($id));
@@ -419,7 +419,7 @@ sub put{
     my ($self, $start, $length, $discardable) = @_;
 }
 
-# return discardable at index $ix or undef if there is none such
+# return discardable at index $ix or undef if there is none
 sub get {
     my ($self, $ix) = @_;
     return if $ix > @{ $self->{nodes} } - 1;
@@ -472,8 +472,8 @@ sub ends{
     return $self->{ends}->{$pos};
 }
 
-# returns a ref to array of id’s a span of contiguous discardables
-# starting at $head_id or $head_id if there is no such span
+# returns a ref to array of id’s belonging to a span of contiguous discardables
+# starting or ending at $head_id or [ $head_id ] if no span starts or ends there
 sub span{
     my ($self, $opts) = @_;
     # set start and direction (negative $step means backwards)
@@ -490,7 +490,7 @@ sub span{
     else{
         croak "start or end id must be defined";
     }
-    # fill span
+    # form the sspan
     my $span = [ ];
     for (
             my $next_id = $curr_id;
@@ -498,16 +498,16 @@ sub span{
             $next_id += $step
         )
     {
-        warn qq{$next_id, $curr_id};
-        warn $self->start($next_node);
-        warn $self->end($curr_id);
+#        warn qq{$next_id, $curr_id};
+#        warn $self->start($next_node);
+#        warn $self->end($curr_id);
         # loop while discardables are contiguous, i.e.
         if ($step > 0) {
-            # next node starts after the current ends
+            # if forwards next node starts after the current ends
             last if $next_node > $curr_id and $self->start($next_node) > $self->end($curr_id);
         }
         elsif ($step < 0) {
-            # next node ends after the current starts
+            # if backwards next node ends after the current starts
             last if $next_node < $curr_id and $self->end($next_node) < $self->start($curr_id);
         }
         push @$span, $next_id;

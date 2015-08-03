@@ -34,11 +34,11 @@ sub slurp_file{
 #my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
 #my @lua_files = qw{ echo.lua };
 
-#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
-#my @lua_files = qw{ constructs.lua };
+my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
+my @lua_files = qw{ constructs.lua };
 
-my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
-my @lua_files = qw{ corner_cases.lua };
+#my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
+#my @lua_files = qw{ corner_cases.lua };
 
 for my $lua_file (@lua_files){
     my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
@@ -52,8 +52,8 @@ for my $lua_file (@lua_files){
 
         $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
-#        say MarpaX::AST::dumper($ast);
-#        say $ast->sprint;
+#        warn MarpaX::AST::dumper($ast);
+        warn $ast->sprint;
         my %skip_always = map { $_ => 1 } (
             'statements', 'chunk'
         );
@@ -67,7 +67,7 @@ for my $lua_file (@lua_files){
                 if ( $node_id eq 'exp' ){
                     if (    $ctx->{parent}->id eq 'stat'
                         and $ctx->{parent}->first_child->id eq 'keyword if'){
-        #                say qq{#parent:\n}, $ctx->{parent}->sprint, qq{\n#of\n}, $ast->sprint;
+        #                warn qq{#parent:\n}, $ctx->{parent}->sprint, qq{\n#of\n}, $ast->sprint;
                         return 0;
                     }
                     else{
@@ -79,7 +79,7 @@ for my $lua_file (@lua_files){
             }
         });
 
-#        say $ast->sprint;
+#        warn $ast->sprint;
 
         # walk ast and see which nodes have discardables before/after them
         my $src = '';
@@ -114,7 +114,7 @@ for my $lua_file (@lua_files){
                 my $id_before = $discardables->ends($start);
                 if ( defined $id_before and not exists $visited->{$id_before}){
                     my $span = $discardables->span( { end => $id_before } );
-                    warn "before: ", @$span;
+#                    warn "before: ", @$span;
                     for my $span_id (@$span){
                         last if exists $visited->{$span_id};
                         $node_text = $discardables->value($span_id) . $node_text;
@@ -122,15 +122,15 @@ for my $lua_file (@lua_files){
                     }
                 }
 
-                say "$node_id, $start, $length, ", $ast->text;
-#                say qq{src: '$node_text'};
+                warn "$node_id, $start, $length, ", $ast->text;
+#                warn qq{node_text: '$node_text'};
 
                 # see if there is a discardable after
                 my $end = $start + $length;
                 my $id_after = $discardables->starts($end);
                 if ( defined $id_after and not exists $visited->{$id_after} ){
                     my $span = $discardables->span( { start => $id_after } );
-                    warn @$span;
+#                    warn @$span;
                     for my $span_id (@$span){
                         last if exists $visited->{$span_id};
                         $node_text .= $discardables->value($span_id);
@@ -139,7 +139,6 @@ for my $lua_file (@lua_files){
                 }
 
                 $src .= $node_text;
-#                say qq{src: '$src'};
             }
         }; ## opts
         $ast->walk( $opts );
@@ -149,7 +148,7 @@ for my $lua_file (@lua_files){
         my $d_tail_id = $discardables->starts($start + $length);
         if (defined $d_tail_id){
             my $span = $discardables->span( { start => $d_tail_id } );
-            warn @$span;
+#            warn @$span;
             for my $span_id (@$span){
                 last if exists $visited->{$span_id};
                 $src .= $discardables->value($span_id);
@@ -157,8 +156,6 @@ for my $lua_file (@lua_files){
             }
         }
 
-#        say qq{src: '$src'};
-#        say qq{src: '$lua_src'};
         eq_or_diff $src, $lua_src, qq{$lua_dir/$lua_file};
     }
 }
