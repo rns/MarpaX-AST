@@ -141,43 +141,45 @@ for my $lua_file (@lua_files){
     my $src = '';
     my $visited = {};
 
-    ast_decorate($ast, $discardables, sub {
-        my ($where, $span, $ast, $ctx) = @_;
-        if ($where eq 'head'){
-            for my $span_id (@$span){
-                return if exists $visited->{$span_id};
-                $src .= $discardables->value($span_id);
-                $visited->{$span_id}++;
+    ast_decorate(
+        $ast, $discardables,
+        sub {
+            my ($where, $span, $ast, $ctx) = @_;
+            if ($where eq 'head'){
+                for my $span_id (@$span){
+                    return if exists $visited->{$span_id};
+                    $src .= $discardables->value($span_id);
+                    $visited->{$span_id}++;
+                }
             }
-        }
-        elsif ($where eq 'before'){
-            my $span_text = '';
-            for my $span_id (@$span){
-                return if exists $visited->{$span_id};
-                $span_text = $discardables->value($span_id) . $span_text;
-                $visited->{$span_id}++;
+            elsif ($where eq 'before'){
+                my $span_text = '';
+                for my $span_id (@$span){
+                    return if exists $visited->{$span_id};
+                    $span_text = $discardables->value($span_id) . $span_text;
+                    $visited->{$span_id}++;
+                }
+                $src .= $span_text;
             }
-            $src .= $span_text;
-        }
-        elsif ($where eq 'after'){
-            my $node_text = '';
-            for my $span_id (@$span){
-                return if exists $visited->{$span_id};
-                $src .= $discardables->value($span_id);
-                $visited->{$span_id}++;
+            elsif ($where eq 'after'){
+                my $node_text = '';
+                for my $span_id (@$span){
+                    return if exists $visited->{$span_id};
+                    $src .= $discardables->value($span_id);
+                    $visited->{$span_id}++;
+                }
             }
-        }
-        elsif ($where eq 'tail'){
-            for my $span_id (@$span){
-                return if exists $visited->{$span_id};
-                $src .= $discardables->value($span_id);
-                $visited->{$span_id}++;
+            elsif ($where eq 'tail'){
+                for my $span_id (@$span){
+                    return if exists $visited->{$span_id};
+                    $src .= $discardables->value($span_id);
+                    $visited->{$span_id}++;
+                }
             }
-        }
-        elsif ($where eq 'node'){
-            $src .= $ast->text;
-        }
-    } );
+            elsif ($where eq 'node'){
+                $src .= $ast->text;
+            }
+        } );
 
     eq_or_diff $src, $lua_src, qq{$lua_dir/$lua_file};
 }
