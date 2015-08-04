@@ -41,40 +41,35 @@ sub ast_decorate{
     if (defined $d_head_id){
         my $span = $discardables->span( { start => $d_head_id } );
 #            warn @$span;
-        $call->('head', $span, $ast);
+        $call->('head', $span, $ast, undef, undef);
     }
 
     my $opts = {
         visit => sub {
             my ($ast, $ctx) = @_;
 
-            return unless $ast->is_literal;
+#            return unless $ast->is_literal;
 
-            $last_literal_node = $ast;
+            if ( $ast->is_literal ){
+                $last_literal_node = $ast
+            }
 
+            # get node data
             my ($node_id, $start, $length) = @$ast;
+            my $end = $start + $length;
 
             # see if there is a discardable before
             my $id_before = $discardables->ends($start);
-            if ( defined $id_before ){
-                my $span = $discardables->span( { end => $id_before } );
-#                    warn "before: ", @$span;
-                $call->('before', $span, $ast, $ctx);
-            }
-
-            $call->('node', undef, $ast, $ctx);
-            warn "$node_id, $start, $length, ", $ast->text;
-#                warn qq{node_text: '$node_text'};
+            my $span_before = defined $id_before ?
+                $discardables->span( { end => $id_before } ) : undef;
 
             # see if there is a discardable after
-            my $end = $start + $length;
             my $id_after = $discardables->starts($end);
-            if ( defined $id_after ){
-                my $span = $discardables->span( { start => $id_after } );
-#                    warn @$span;
-                $call->('after', $span, $ast, $ctx);
-            }
+            my $span_after = defined $id_after ?
+                $discardables->span( { start => $id_after } ) : undef;
 
+#            warn "# $node_id, $start, $length:\n", $ast->sprint;
+            $call->('node', $span_before, $ast, $span_after, $ctx);
         }
     }; ## opts
     $ast->walk( $opts );
@@ -85,31 +80,32 @@ sub ast_decorate{
     if (defined $d_tail_id){
         my $span = $discardables->span( { start => $d_tail_id } );
 #            warn @$span;
-        $call->('tail', $span, $ast);
+        $call->('tail', undef, $ast, $span, { last_literal_node => $last_literal_node });
     }
 }
 
 #my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
 #my @lua_files = qw{ echo.lua };
 
-#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
-#my @lua_files = qw{ constructs.lua };
+my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
+my @lua_files = qw{ constructs.lua };
 
-my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
-my @lua_files = qw{ corner_cases.lua };
+#my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
+#my @lua_files = qw{ corner_cases.lua };
 
 for my $lua_file (@lua_files){
+
     my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
     my $p = MarpaX::Languages::Lua::AST->new;
 
     my $ast = $p->parse( $lua_src );
-    warn MarpaX::AST::dumper($p->{discardables});
+#    warn MarpaX::AST::dumper($p->{discardables});
     my $discardables = $p->{discardables};
 
     $ast = MarpaX::AST->new( $ast, { CHILDREN_START => 3 } );
 
-#        warn MarpaX::AST::dumper($ast);
-    warn $ast->sprint;
+#    warn MarpaX::AST::dumper($ast);
+#    warn $ast->sprint;
     my %skip_always = map { $_ => 1 } (
         'statements', 'chunk'
     );
@@ -144,40 +140,42 @@ for my $lua_file (@lua_files){
     ast_decorate(
         $ast, $discardables,
         sub {
-            my ($where, $span, $ast, $ctx) = @_;
+            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
+
             if ($where eq 'head'){
-                for my $span_id (@$span){
-                    return if exists $visited->{$span_id};
-                    $src .= $discardables->value($span_id);
-                    $visited->{$span_id}++;
-                }
-            }
-            elsif ($where eq 'before'){
-                my $span_text = '';
-                for my $span_id (@$span){
-                    return if exists $visited->{$span_id};
-                    $span_text = $discardables->value($span_id) . $span_text;
-                    $visited->{$span_id}++;
-                }
-                $src .= $span_text;
-            }
-            elsif ($where eq 'after'){
-                my $node_text = '';
-                for my $span_id (@$span){
+                for my $span_id (@$span_before){
                     return if exists $visited->{$span_id};
                     $src .= $discardables->value($span_id);
                     $visited->{$span_id}++;
                 }
             }
             elsif ($where eq 'tail'){
-                for my $span_id (@$span){
-                    return if exists $visited->{$span_id};
+                for my $span_id (@$span_after){
+                    last if exists $visited->{$span_id};
                     $src .= $discardables->value($span_id);
                     $visited->{$span_id}++;
                 }
             }
             elsif ($where eq 'node'){
+                return unless $ast->is_literal;
+                if (defined $span_before){
+                    my $span_text = '';
+                    for my $span_id (@$span_before){
+                        last if exists $visited->{$span_id};
+                        $span_text = $discardables->value($span_id) . $span_text;
+                        $visited->{$span_id}++;
+                    }
+                    $src .= $span_text;
+                }
                 $src .= $ast->text;
+                if (defined $span_after){
+                    my $node_text = '';
+                    for my $span_id (@$span_after){
+                        last if exists $visited->{$span_id};
+                        $src .= $discardables->value($span_id);
+                        $visited->{$span_id}++;
+                    }
+                }
             }
         } );
 
