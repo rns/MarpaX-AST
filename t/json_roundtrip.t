@@ -111,6 +111,7 @@ is_deeply($data, {
 }, 'is_deeply test');
 
 my $big_test = <<'JSON';
+// This is c++ style comment
 {
     "source" : "<a href=\"http://janetter.net/\" rel=\"nofollow\">Janetter</a>",
     "entities" : {
@@ -125,6 +126,7 @@ my $big_test = <<'JSON';
         "hashtags" : [ ],
         "urls" : [ ]
     },
+    /* This is c style comment */
     "in_reply_to_status_id_str" : "281400879465238529",
     "geo" : {
     },
@@ -196,6 +198,34 @@ $data = $p->parse_json(<<'JSON');
 JSON
 is($data->{test}, "\x{2603}", 'Unicode char');
 
+# commented json tests from https://commentjson.readthedocs.org/en/latest/
+$data = $p->parse_json(<<'JSON');
+{
+    "name": "Vaidik Kapoor", # Person's name
+    "location": "Delhi, India", // Person's location
+
+    # Section contains info about
+    // person's appearance
+    "appearance": {
+        "hair_color": "black",
+        "eyes_color": "black",
+        "height": "6"
+    }
+}
+JSON
+
+is_deeply $data, eval q{
+    {
+        'name' => 'Vaidik Kapoor',
+        'location' => 'Delhi, India',
+        'appearance' => {
+            'hair_color' => 'black',
+            'height' => '6',
+            'eyes_color' => 'black'
+        }
+    }
+}, "commented json";
+
 done_testing();
 
 package MarpaX::JSON;
@@ -265,8 +295,37 @@ sub new {
             in_string      ~ in_string_char*
             in_string_char ~ [^"] | '\"'
 
-            :discard       ~ whitespace
+            :discard       ~ whitespace event => 'whitespace'
             whitespace     ~ [\s]+
+
+            :discard       ~ <C style comment> event => 'C style comment'
+            # source: https://github.com/jddurand/MarpaX-Languages-C-AST/blob/master/lib/MarpaX/Languages/C/AST/Grammar/ISO_ANSI_C_2011.pm
+            <C style comment> ~ '/*' <comment interior> '*/'
+            <comment interior> ~
+                <optional non stars>
+                <optional star prefixed segments>
+                <optional pre final stars>
+            <optional non stars> ~ [^*]*
+            <optional star prefixed segments> ~ <star prefixed segment>*
+            <star prefixed segment> ~ <stars> [^/*] <optional star free text>
+            <stars> ~ [*]+
+            <optional star free text> ~ [^*]*
+            <optional pre final stars> ~ [*]*
+
+            :discard       ~ <Cplusplus style comment> event => 'Cplusplus style comment'
+            # source: https://github.com/jddurand/MarpaX-Languages-C-AST/blob/master/lib/MarpaX/Languages/C/AST/Grammar/ISO_ANSI_C_2011.pm
+            <Cplusplus style comment> ~ '//' <Cplusplus comment interior>
+            <Cplusplus comment interior> ~ [^\n]*
+
+            :discard       ~ <hash comment> event => 'hash comment'
+            # source: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_calc.t
+            <hash comment> ~ <terminated hash comment> | <unterminated
+               final hash comment>
+            <terminated hash comment> ~ '#' <hash comment body> <vertical space char>
+            <unterminated final hash comment> ~ '#' <hash comment body>
+            <hash comment body> ~ <hash comment char>*
+            <vertical space char> ~ [\x{A}\x{B}\x{C}\x{D}\x{2028}\x{2029}]
+            <hash comment char> ~ [^\x{A}\x{B}\x{C}\x{D}\x{2028}\x{2029}]
 
 END_OF_SOURCE
         }
@@ -276,15 +335,33 @@ END_OF_SOURCE
 }
 
 sub parse {
-    my ( $parser, $string ) = @_;
+    my ( $parser, $json ) = @_;
 
-    my $re = Marpa::R2::Scanless::R->new(
-        {   grammar           => $parser->{grammar},
+    my $recce = Marpa::R2::Scanless::R->new(
+        {
+            grammar => $parser->{grammar},
+            trace_terminals => 0,
         }
     );
-    $re->read( \$string );
-    my $ast = ${ $re->value() };
+
+    my $json_ref    = \$json;
+    my $json_length = length $json;
+    my $pos         = $recce->read($json_ref);
+
+    READ: while (1) {
+        EVENT:
+        for my $event (@{$recce->events}){
+            my ($name, $start, $end) = @{$event};
+            my $length = $end - $start;
+            next EVENT;
+        }
+        last READ if ($pos >= $json_length);
+        $pos = $recce->resume($pos);
+    }
+
+    my $ast = ${ $recce->value() };
     return $parser->decode ( $ast );
+
 } ## end sub parse
 
 sub decode {
