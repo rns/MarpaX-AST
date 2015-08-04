@@ -55,16 +55,16 @@ sub ast_decorate{
             }
 
             # get node data
-            my ($node_id, $start, $length) = @$ast;
-            my $end = $start + $length;
+            my ($node_id, $node_text_start, $node_text_length) = @$ast;
+            my $node_text_end = $node_text_start + $node_text_length;
 
             # see if there is a discardable before
-            my $id_before = $discardables->ends($start);
+            my $id_before = $discardables->ends($node_text_start);
             my $span_before = defined $id_before ?
                 $discardables->span( { end => $id_before } ) : undef;
 
             # see if there is a discardable after
-            my $id_after = $discardables->starts($end);
+            my $id_after = $discardables->starts($node_text_end);
             my $span_after = defined $id_after ?
                 $discardables->span( { start => $id_after } ) : undef;
 
@@ -149,17 +149,7 @@ for my $lua_file (@lua_files){
             }
             elsif ($where eq 'node'){
                 return unless $ast->is_literal;
-
-                if (defined $span_before){
-                    my $span_text = '';
-                    for my $span_id (@$span_before){
-                        last if exists $visited->{$span_id};
-                        $span_text = $discardables->value($span_id) . $span_text;
-                        $visited->{$span_id}++;
-                    }
-                    $src .= $span_text;
-                }
-
+                $src .= reverse $discardables->span_text($span_before, $visited);
                 $src .= $ast->text;
                 $src .= $discardables->span_text($span_after, $visited);
             }
