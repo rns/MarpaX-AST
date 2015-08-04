@@ -144,7 +144,8 @@ for my $lua_file (@lua_files){
 
             if ($where eq 'head'){
                 for my $span_id (@$span_before){
-                    return if exists $visited->{$span_id};
+                    # return would be fine too
+                    last if exists $visited->{$span_id};
                     $src .= $discardables->value($span_id);
                     $visited->{$span_id}++;
                 }
