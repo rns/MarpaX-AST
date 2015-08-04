@@ -49,7 +49,7 @@ sub reproduce_lua_src{
             }
             elsif ($where eq 'node'){
                 return unless $ast->is_literal;
-                $src .= reverse $discardables->span_text($span_before, $visited);
+                $src .= $discardables->span_text($span_before, $visited);
                 $src .= $ast->text;
                 $src .= $discardables->span_text($span_after, $visited);
             }
