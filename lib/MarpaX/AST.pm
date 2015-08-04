@@ -516,5 +516,17 @@ sub span{
     return $span;
 }
 
+sub span_text{
+    my ($self, $span, $visited) = @_;
+    my $defined_visited = defined $visited;
+    my $span_text = '';
+    for my $discardable_id (@$span){
+        last if $defined_visited and exists $visited->{$discardable_id};
+        $span_text .= $self->value($discardable_id);
+        $visited->{$discardable_id}++ if $defined_visited;
+    }
+    return $span_text;
+}
+
 1;
 
