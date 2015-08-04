@@ -31,15 +31,6 @@ sub slurp_file{
     return $slurp;
 }
 
-#my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
-#my @lua_files = qw{ echo.lua };
-
-#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
-#my @lua_files = qw{ constructs.lua };
-
-my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
-my @lua_files = qw{ corner_cases.lua };
-
 sub ast_decorate{
     my ($ast, $discardables, $call) = @_;
 
@@ -98,6 +89,15 @@ sub ast_decorate{
     }
 }
 
+#my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
+#my @lua_files = qw{ echo.lua };
+
+#my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
+#my @lua_files = qw{ constructs.lua };
+
+my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
+my @lua_files = qw{ corner_cases.lua };
+
 for my $lua_file (@lua_files){
     my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
     my $p = MarpaX::Languages::Lua::AST->new;
@@ -151,22 +151,21 @@ for my $lua_file (@lua_files){
             }
         }
         elsif ($where eq 'before'){
-            my $node_text = '';
+            my $span_text = '';
             for my $span_id (@$span){
                 return if exists $visited->{$span_id};
-                $node_text = $discardables->value($span_id) . $node_text;
+                $span_text = $discardables->value($span_id) . $span_text;
                 $visited->{$span_id}++;
             }
-            $src .= $node_text;
+            $src .= $span_text;
         }
         elsif ($where eq 'after'){
             my $node_text = '';
             for my $span_id (@$span){
                 return if exists $visited->{$span_id};
-                $node_text .= $discardables->value($span_id);
+                $src .= $discardables->value($span_id);
                 $visited->{$span_id}++;
             }
-            $src .= $node_text;
         }
         elsif ($where eq 'tail'){
             for my $span_id (@$span){
