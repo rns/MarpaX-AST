@@ -210,8 +210,8 @@ sub new {
         {
             source         => \(<<'END_OF_SOURCE'),
 
-            :default     ::= action => [ name, value ]
-            lexeme default = action => [ name, value ]
+            :default     ::= action => [ name, start, length, value ]
+            lexeme default = action => [ name, start, length, value ]
 
             json         ::= object
                            | array
@@ -293,7 +293,7 @@ sub decode {
     my $ast  = shift;
 
     if (ref $ast){
-        my ($id, @nodes) = @$ast;
+        my ($id, $start, $length, @nodes) = @$ast;
         if ($id eq 'json'){
             $parser->decode(@nodes);
         }
@@ -307,7 +307,7 @@ sub decode {
             return [ map { $parser->decode($_) } @nodes ];
         }
         elsif ($id eq 'string'){
-            return decode_string( substr $nodes[0]->[1], 1, -1 );
+            return decode_string( substr $nodes[0]->[3], 1, -1 );
         }
         elsif ($id eq 'number'){
             return $nodes[0];
