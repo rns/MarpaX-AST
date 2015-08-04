@@ -432,6 +432,272 @@ JSON
 is $p->reproduce_json($orthanc_config), $orthanc_config,
     "heavily commented real-life example from orthanc";
 
+# https://gist.github.com/etrepat/1289965
+my $sublimetext2 = <<JSON;
+{
+    // Sets the colors used within the text area
+    "color_scheme": "Packages/Color Scheme - Default/Monokai.tmTheme",
+
+    // Note that the font_face and font_size are overriden in the platform
+    // specific settings file, for example, "Base File (Linux).sublime-settings".
+    // Because of this, setting them here will have no effect: you must set them
+    // in your User File Preferences.
+    "font_face": "Monaco",
+    "font_size": 12,
+
+    // Set to false to prevent line numbers being drawn in the gutter
+    "line_numbers": true,
+
+    // Set to false to hide the gutter altogether
+    "gutter": true,
+
+    // Fold buttons are the triangles shown in the gutter to fold regions of text
+    "fold_buttons": true,
+
+    // Hides the fold buttons unless the mouse is over the gutter
+    "fade_fold_buttons": true,
+
+    // Columns in which to display vertical rulers
+    "rulers": [80],
+
+    // Set to true to turn spell checking on by default
+    "spell_check": false,
+
+    // The number of spaces a tab is considered equal to
+    "tab_size": 2,
+
+    // Set to true to insert spaces when tab is pressed
+    "translate_tabs_to_spaces": true,
+
+    // If translate_tabs_to_spaces is true, use_tab_stops will make tab and
+    // backspace insert/delete up to the next tabstop
+    "use_tab_stops": true,
+
+    // Set to false to disable detection of tabs vs. spaces on load
+    "detect_indentation": true,
+
+    // Set to false to disable automatic indentation
+    "auto_indent": true,
+
+    // Set to false to not trim white space added by auto_indent
+    "trim_automatic_white_space": true,
+
+    // Set to false for horizontal scrolling
+    // NOTE: word_wrap is explicitly turned off in several syntax specific
+    // settings, you'll need to set it via your user syntax specific settings
+    // to ensure these are overridden.
+    "word_wrap": false,
+
+    // Set to false to prevent word wrapped lines from being indented to the same
+    // level
+    "indent_subsequent_lines": true,
+
+    // Set to false to stop auto pairing quotes, brackets etc
+    "auto_match_enabled": true,
+
+    // Set to true to draw a border around the visible rectangle on the minimap.
+    // The color of the border will be determined by the "minimapBorder" key in
+    // the color scheme
+    "draw_minimap_border": true,
+
+    // Set to false to disable highlighting any line with a caret
+    "highlight_line": true,
+
+    // Valid values are "smooth", "phase", "blink", "wide" and "solid".
+    "caret_style": "smooth",
+
+    // Set to false to disable underlining the brackets surrounding the caret
+    "match_brackets": true,
+
+    // Set to false if you'd rather only highlight the brackets when the caret is
+    // next to one
+    "match_brackets_content": true,
+
+    // Set to false to not highlight square brackets. This only takes effect if
+    // matchBrackets is true
+    "match_brackets_square": true,
+
+    // Set to false to not highlight curly brackets. This only takes effect if
+    // matchBrackets is true
+    "match_brackets_braces": true,
+
+    // Enable visualisation of the matching tag in HTML and XML
+    "match_tags": true,
+
+    // Additional spacing at the top of each line, in pixels
+    "line_padding_top": 0,
+
+    // Additional spacing at the bottom of each line, in pixels
+    "line_padding_bottom": 0,
+
+    // Set to false to disable scrolling past the end of the buffer.
+    // On OS X, this value is overridden in the platform specific settings, so
+    // you'll need to place this line in your user settings to override it.
+    "scroll_past_end": true,
+
+    // Set to "none" to turn off drawing white space, "selection" to draw only the
+    // white space within the selection, and "all" to draw all white space
+    "draw_white_space": "selection",
+
+    // Set to false to turn off the indentation guides.
+    // The color and width of the indent guides may be customized by editing
+    // the corresponding .tmTheme file, and specifying the colors "guide",
+    // "activeGuide" and "stackGuide"
+    "draw_indent_guides": true,
+
+    // Controls how the indent guides are drawn, valid options are
+    // "draw_normal" and "draw_active". draw_active will draw the indent
+    // guides containing the caret in a different color.
+    "indent_guide_options": ["draw_active"],
+
+    // Set to true to removing trailing white space on save
+    "trim_trailing_white_space_on_save": true,
+
+    // Set to true to ensure the last line of the file ends in a newline
+    // character when saving
+    "ensure_newline_at_eof_on_save": true,
+
+    // The encoding to use when the encoding can't be determined automatically.
+    // ASCII, UTF-8 and UTF-16 encodings will be automatically detected.
+    "fallback_encoding": "UTF-8",
+
+    // Encoding used when saving new files, and files opened with an undefined
+    // encoding (e.g., plain ascii files). If a file is opened with a specific
+    // encoding (either detected or given explicitly), this setting will be
+    // ignored, and the file will be saved with the encoding it was opened
+    // with.
+    "default_encoding": "UTF-8",
+
+    // Determines what character(s) are used to terminate each line in new files.
+    // Valid values are 'system' (whatever the OS uses), 'windows' (CRLF) and
+    // 'unix' (LF only).
+    "default_line_ending": "system",
+
+    // When enabled, pressing tab will insert the best matching completion.
+    // When disabled, tab will only trigger snippets or insert a tab.
+    // Shift+tab can be used to insert an explicit tab when tab_completion is
+    // enabled.
+    "tab_completion": true,
+
+    // Enable auto complete to be triggered automatically when typing.
+    "auto_complete": true,
+
+    // The maximum file size where auto complete will be automatically triggered.
+    "auto_complete_size_limit": 4194304,
+
+    // The delay, in ms, before the auto complete window is shown after typing
+    "auto_complete_delay": 50,
+
+    // Controls what scopes auto complete will be triggered in
+    "auto_complete_selector": "source - comment",
+
+    // Additional situations to trigger auto complete
+    "auto_complete_triggers": [ {"selector": "text.html", "characters": "<"} ],
+
+    // By default, auto complete will commit the current completion on enter.
+    // This setting can be used to make it complete on tab instead.
+    // Completing on tab is generally a superior option, as it removes
+    // ambiguity between committing the completion and inserting a newline.
+    "auto_complete_commit_on_tab": true,
+
+    // Controls if auto complete is shown when snippet fields are active.
+    // Only relevant if auto_complete_commit_on_tab is true.
+    "auto_complete_with_fields": false,
+
+    // By default, shift+tab will only unindent if the selection spans
+    // multiple lines. When pressing shift+tab at other times, it'll insert a
+    // tab character - this allows tabs to be inserted when tab_completion is
+    // enabled. Set this to true to make shift+tab always unindent, instead of
+    // inserting tabs.
+    "shift_tab_unindent": false,
+
+    // If true, the selected text will be copied into the find panel when it's
+    // shown.
+    // On OS X, this value is overridden in the platform specific settings, so
+    // you'll need to place this line in your user settings to override it.
+    "find_selected_text": true
+}
+JSON
+#'
+
+is $p->reproduce_json($sublimetext2), $sublimetext2,
+    "Sublime Text 2 settings";
+
+# https://github.com/ether/etherpad-lite/wiki/Example-Production-Settings.JSON
+
+my $etherpad_lite = <<JSON;
+/*
+  This file must be valid JSON. But comments are allowed
+
+  Please edit settings.json, not settings.json.template
+*/
+{
+  // Name your instance!
+  "title": "My awesome Etherpad site",
+
+  //Ip and port which etherpad should bind at
+  "ip": "0.0.0.0",
+  "port" : 9001,
+
+  //The Type of the database. You can choose between dirty, postgres, sqlite and mysql
+  "dbType" : "mysql",
+  "dbSettings" : {
+                    "user"    : "root",
+                    "host"    : "localhost",
+                    "password": "",
+                    "database": "store"
+                  },
+
+  //the default text of a pad
+  "defaultPadText" : "Welcome to my AWESOME site!\n\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\n\nGet involved with Etherpad at http:\/\/etherpad.org\n",
+
+  /* Users must have a session to access pads. This effectively allows only group pads to be accessed. */
+  "requireSession" : false,
+
+  /* Users may edit pads but not create new ones. Pad creation is only via the API. This applies both to group pads and regular pads. */
+  "editOnly" : false,
+
+  /* if true, all css & js will be minified before sending to the client. This will improve the loading performance massivly,
+     but makes it impossible to debug the javascript/css */
+  "minify" : true,
+
+  /* How long may clients use served javascript code (in seconds)? Without versioning this
+     may cause problems during deployment. Set to 0 to disable caching */
+  "maxAge" : 21600, // 60 * 60 * 6 = 6 hours
+
+  /* This is the path to the Abiword executable. Setting it to null, disables abiword.
+     Abiword is needed to enable the import/export of pads*/
+  "abiword" : "/usr/bin/abiword",
+
+  /* This setting is used if you require authentication of all users.
+     Note: /admin always requires authentication. */
+  "requireAuthentication": false,
+
+  /* Require authorization by a module, or a user with is_admin set, see below. */
+  "requireAuthorization": false,
+
+  /* Users for basic authentication. is_admin = true gives access to /admin.
+     If you do not uncomment this, /admin will not be available! */
+  "users": {
+    "admin": {
+      "password": "S3cRet##1",
+      "is_admin": true
+    }
+  },
+
+  /* The log level we are using, can be: DEBUG, INFO, WARN, ERROR */
+  "loglevel": "ERROR",
+
+  /* Google Analytics plugin settings */
+  "ep_googleanalytics":{
+    "gaCode":"UA-2387498"
+  }
+}
+JSON
+
+is $p->reproduce_json($etherpad_lite), $etherpad_lite,
+    "etherpad-lite settings";
+
 done_testing();
 
 package MarpaX::JSON;
