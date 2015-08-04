@@ -442,112 +442,109 @@ sub new {
 
     my $parser = bless {}, $class;
 
-    $parser->{grammar} = Marpa::R2::Scanless::G->new(
-        {
-            source         => \(<<'END_OF_SOURCE'),
+    $parser->{grammar} = Marpa::R2::Scanless::G->new({
+        source         => \(<<'END_OF_SOURCE'),
 
-            :default     ::= action => [ name, start, length, value ]
-            lexeme default = action => [ name, start, length, value ]
+        :default     ::= action => [ name, start, length, value ]
+        lexeme default = action => [ name, start, length, value ]
 
-            json         ::= object
-                           | array
+        json         ::= object
+                       | array
 
-            object       ::= <left curly> <right curly>
-                           | <left curly> members <right curly>
+        object       ::= <left curly> <right curly>
+                       | <left curly> members <right curly>
 
-            <left curly>   ~ '{'
-            <right curly>  ~ '}'
+        members      ::= pair
+        members      ::= members <comma> pair
 
-            members      ::= pair
-            members      ::= members <comma> pair
-            <comma>        ~ ','
+        pair         ::= string <colon> value
 
-            pair         ::= string <colon> value
-            <colon>        ~ ':'
+        value        ::= string
+                       | object
+                       | number
+                       | array
+                       | <true>
+                       | <false>
+                       | <null>
 
-            value        ::= string
-                           | object
-                           | number
-                           | array
-                           | <true>
-                           | <false>
-                           | <null>
+        array        ::= <left square> <right square>
+                       | <left square> elements <right square>
 
-            <true>         ~ 'true'
-            <false>        ~ 'false'
-            <null>         ~ 'null'
+        elements     ::= value
+        elements     ::= elements <comma> value
 
-            array        ::= <left square> <right square>
-                           | <left square> elements <right square>
-            <left square>  ~ '['
-            <right square> ~ ']'
+        number         ~ int
+                       | int frac
+                       | int exp
+                       | int frac exp
 
-            elements     ::= value
-            elements     ::= elements <comma> value
+        int            ~ digits
+                       | '-' digits
 
-            number         ~ int
-                           | int frac
-                           | int exp
-                           | int frac exp
+        digits         ~ [\d]+
 
-            int            ~ digits
-                           | '-' digits
+        frac           ~ '.' digits
 
-            digits         ~ [\d]+
+        exp            ~ e digits
 
-            frac           ~ '.' digits
+        e              ~ 'e'
+                       | 'e+'
+                       | 'e-'
+                       | 'E'
+                       | 'E+'
+                       | 'E-'
 
-            exp            ~ e digits
+        string       ::= lstring
 
-            e              ~ 'e'
-                           | 'e+'
-                           | 'e-'
-                           | 'E'
-                           | 'E+'
-                           | 'E-'
+        lstring        ~ quote in_string quote
+        quote          ~ ["]
+        in_string      ~ in_string_char*
+        in_string_char ~ [^"] | '\"'
 
-            string       ::= lstring
+        <left curly>   ~ '{'
+        <right curly>  ~ '}'
+        <left square>  ~ '['
+        <right square> ~ ']'
+        <comma>        ~ ','
+        <colon>        ~ ':'
+        <true>         ~ 'true'
+        <false>        ~ 'false'
+        <null>         ~ 'null'
 
-            lstring        ~ quote in_string quote
-            quote          ~ ["]
-            in_string      ~ in_string_char*
-            in_string_char ~ [^"] | '\"'
+        :discard       ~ whitespace event => 'whitespace'
+        whitespace     ~ [\s]+
 
-            :discard       ~ whitespace event => 'whitespace'
-            whitespace     ~ [\s]+
+        :discard       ~ <C style comment> event => 'C style comment'
+        # source: https://github.com/jddurand/MarpaX-Languages-C-AST/blob/master/lib/MarpaX/Languages/C/AST/Grammar/ISO_ANSI_C_2011.pm
+        <C style comment> ~ '/*' <comment interior> '*/'
+        <comment interior> ~
+            <optional non stars>
+            <optional star prefixed segments>
+            <optional pre final stars>
+        <optional non stars> ~ [^*]*
+        <optional star prefixed segments> ~ <star prefixed segment>*
+        <star prefixed segment> ~ <stars> [^/*] <optional star free text>
+        <stars> ~ [*]+
+        <optional star free text> ~ [^*]*
+        <optional pre final stars> ~ [*]*
 
-            :discard       ~ <C style comment> event => 'C style comment'
-            # source: https://github.com/jddurand/MarpaX-Languages-C-AST/blob/master/lib/MarpaX/Languages/C/AST/Grammar/ISO_ANSI_C_2011.pm
-            <C style comment> ~ '/*' <comment interior> '*/'
-            <comment interior> ~
-                <optional non stars>
-                <optional star prefixed segments>
-                <optional pre final stars>
-            <optional non stars> ~ [^*]*
-            <optional star prefixed segments> ~ <star prefixed segment>*
-            <star prefixed segment> ~ <stars> [^/*] <optional star free text>
-            <stars> ~ [*]+
-            <optional star free text> ~ [^*]*
-            <optional pre final stars> ~ [*]*
+        :discard       ~ <Cplusplus style comment> event => 'Cplusplus style comment'
+        # source: https://github.com/jddurand/MarpaX-Languages-C-AST/blob/master/lib/MarpaX/Languages/C/AST/Grammar/ISO_ANSI_C_2011.pm
+        <Cplusplus style comment> ~ '//' <Cplusplus comment interior>
+        <Cplusplus comment interior> ~ [^\n]*
 
-            :discard       ~ <Cplusplus style comment> event => 'Cplusplus style comment'
-            # source: https://github.com/jddurand/MarpaX-Languages-C-AST/blob/master/lib/MarpaX/Languages/C/AST/Grammar/ISO_ANSI_C_2011.pm
-            <Cplusplus style comment> ~ '//' <Cplusplus comment interior>
-            <Cplusplus comment interior> ~ [^\n]*
-
-            :discard       ~ <hash comment> event => 'hash comment'
-            # source: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_calc.t
-            <hash comment> ~ <terminated hash comment> | <unterminated
-               final hash comment>
-            <terminated hash comment> ~ '#' <hash comment body> <vertical space char>
-            <unterminated final hash comment> ~ '#' <hash comment body>
-            <hash comment body> ~ <hash comment char>*
-            <vertical space char> ~ [\x{A}\x{B}\x{C}\x{D}\x{2028}\x{2029}]
-            <hash comment char> ~ [^\x{A}\x{B}\x{C}\x{D}\x{2028}\x{2029}]
+        :discard       ~ <hash comment> event => 'hash comment'
+        # source: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_calc.t
+        <hash comment> ~ <terminated hash comment> | <unterminated
+           final hash comment>
+        <terminated hash comment> ~ '#' <hash comment body> <vertical space char>
+        <unterminated final hash comment> ~ '#' <hash comment body>
+        <hash comment body> ~ <hash comment char>*
+        <vertical space char> ~ [\x{A}\x{B}\x{C}\x{D}\x{2028}\x{2029}]
+        <hash comment char> ~ [^\x{A}\x{B}\x{C}\x{D}\x{2028}\x{2029}]
 
 END_OF_SOURCE
-        }
-    );
+    });
 
     return $parser;
 }
