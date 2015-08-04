@@ -13,6 +13,8 @@ use Test::More;
 
 use Marpa::R2;
 
+use_ok 'MarpaX::AST';
+
 my $p = MarpaX::JSON->new;
 
 my $data = $p->parse_json(q${"test":"1"}$);
@@ -331,6 +333,8 @@ END_OF_SOURCE
         }
     );
 
+    $parser->{discardables} = MarpaX::AST::Discardables->new;
+
     return $parser;
 }
 
@@ -353,11 +357,15 @@ sub parse {
         for my $event (@{$recce->events}){
             my ($name, $start, $end) = @{$event};
             my $length = $end - $start;
+            my $text = $recce->literal( $start, $length );
+            $parser->{discardables}->post($name, $start, $length, $text);
             next EVENT;
         }
         last READ if ($pos >= $json_length);
         $pos = $recce->resume($pos);
     }
+
+#    warn MarpaX::AST::dumper($parser->{discardables});
 
     my $ast = ${ $recce->value() };
     return $parser->decode ( $ast );
