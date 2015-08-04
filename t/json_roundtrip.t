@@ -5,6 +5,10 @@
 # json decoding
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_json.t
 
+# requirements to grammar for round-trip parsers
+#   no bare literals (only named)
+#   no sequences (delimiters are missed)
+
 use 5.010;
 use strict;
 use warnings;
@@ -17,41 +21,26 @@ use_ok 'MarpaX::AST';
 
 my $p = MarpaX::JSON->new;
 
-my $data = $p->parse_json(q${"test":"1"}$);
-is($data->{test}, 1);
+my $json_one_liners = [
+    q${"test":"1"}$,
+    q${"test":[1,2,3]}$,
+    q${"test":true}$,
+    q${"test":false}$,
+    q${"test":null}$,
+    q${"test":null, "test2":"hello world"}$,
+    q${"test":"1.25"}$,
+    q${"test":"1.25e4"}$,
+    q$[]$,
+    q${}$,
+    q${"test":"1"}$,
+    q${ "test":  "\u2603" }$,
+];
 
-{
-    my $test = q${"test":[1,2,3]}$;
-    $data = $p->parse_json(q${"test":[1,2,3]}$);
-    is_deeply( $data->{test}, [ 1, 2, 3 ], $test );
+for my $json_one_liner (@$json_one_liners){
+    is $p->reproduce_json($json_one_liner), $json_one_liner, $json_one_liner;
 }
 
-$data = $p->parse_json(q${"test":true}$);
-is($data->{test}, 1);
-
-$data = $p->parse_json(q${"test":false}$);
-is($data->{test}, '');
-
-$data = $p->parse_json(q${"test":null}$);
-is($data->{test}, undef);
-
-$data = $p->parse_json(q${"test":null, "test2":"hello world"}$);
-is($data->{test}, undef);
-is($data->{test2}, "hello world");
-
-$data = $p->parse_json(q${"test":"1.25"}$);
-is($data->{test}, '1.25', '1.25');
-
-$data = $p->parse_json(q${"test":"1.25e4"}$);
-is($data->{test}, '1.25e4', '1.25e4');
-
-$data = $p->parse_json(q$[]$);
-is_deeply($data, [], '[]');
-
-$data = $p->parse_json(q${}$);
-is_deeply($data, {}, '{}');
-
-$data = $p->parse_json(<<'JSON');
+my $locations = <<JSON;
 [
       {
          "precision": "zip",
@@ -75,16 +64,11 @@ $data = $p->parse_json(<<'JSON');
       }
 ]
 JSON
-is_deeply($data, [
-    { "precision"=>"zip", Latitude => "37.7668", Longitude=>"-122.3959",
-      "Country" => "US", Zip => 94107, Address => '',
-      City => "SAN FRANCISCO", State => 'CA' },
-    { "precision" => "zip", Longitude => "-122.026020", Address => "",
-      City => "SUNNYVALE", Country => "US", Latitude => "37.371991",
-      Zip => 94085, State => "CA" }
-], 'Geo data');
 
-$data = $p->parse_json(<<'JSON');
+is $p->reproduce_json($locations), $locations, "locations";
+
+my $image = <<'JSON';
+# this is a hash comment to image json file test
 {
     "Image": {
         "Width":  800,
@@ -99,21 +83,11 @@ $data = $p->parse_json(<<'JSON');
     }
 }
 JSON
-is_deeply($data, {
-    "Image" => {
-        "Width" => 800, "Height" => 600,
-        "Title" => "View from 15th Floor",
-        "Thumbnail" => {
-            "Url" => "http://www.example.com/image/481989943",
-            "Height" => 125,
-            "Width" => 100,
-        },
-        "IDs" => [ 116, 943, 234, 38793 ],
-    }
-}, 'is_deeply test');
+
+is $p->reproduce_json($image), $image, "image";
 
 my $big_test = <<'JSON';
-// This is c++ style comment
+// This is c++ style comment to janetter.net json test
 {
     "source" : "<a href=\"http://janetter.net/\" rel=\"nofollow\">Janetter</a>",
     "entities" : {
@@ -151,59 +125,11 @@ my $big_test = <<'JSON';
     }
 }
 JSON
-$data = $p->parse_json($big_test);
 
-is_deeply $data, eval q{
-{
-    'source' => '<a href="http://janetter.net/" rel="nofollow">Janetter</a>',
-    'geo' => {},
-    'in_reply_to_user_id_str' => '61233',
-    'id_str' => '281405942321532929',
-    'entities' => {
-        'hashtags' => [],
-        'media' => [],
-        'user_mentions' => [
-            {
-                'name' => 'James Governor',
-                'id' => '61233',
-                'id_str' => '61233',
-                'indices' => [
-                    '0',
-                    '10'
-                ],
-                'screen_name' => 'moankchips'
-            }
-        ],
-        'urls' => []
-    },
-    'created_at' => 'Wed Dec 19 14:29:39 +0000 2012',
-    'in_reply_to_status_id_str' => '281400879465238529',
-    'text' => '@monkchips Ouch. Some regrets are harsher than others.',
-    'user' => {
-        'protected' => '',
-        'name' => 'Sarah Bourne',
-        'verified' => '',
-        'id' => '16010789',
-        'id_str' => '16010789',
-        'profile_image_url_https' => 'https://si0.twimg.com/profile_images/638441870/Snapshot-of-sb_normal.jpg',
-        'screen_name' => 'sarahebourne'
-    },
-    'in_reply_to_user_id' => '61233',
-    'id' => '281405942321532929',
-    'in_reply_to_status_id' => '281400879465238529',
-    'in_reply_to_screen_name' => 'monkchips'
-}
-}, "big test";
-
-$data = $p->parse_json(<<'JSON');
-{ "test":  "\u2603" }
-JSON
-is($data->{test}, "\x{2603}", 'Unicode char');
-
-# commented json tests
+is $p->reproduce_json($big_test), $big_test, "janetter.net";
 
 # https://commentjson.readthedocs.org/en/latest/
-$data = $p->parse_json(<<'JSON');
+my $commentjson = <<JSON;
 {
     "name": "Vaidik Kapoor", # Person's name
     "location": "Delhi, India", // Person's location
@@ -218,22 +144,10 @@ $data = $p->parse_json(<<'JSON');
 }
 JSON
 
-is_deeply $data, eval q{
-    {
-        'name' => 'Vaidik Kapoor',
-        'location' => 'Delhi, India',
-        'appearance' => {
-            'hair_color' => 'black',
-            'height' => '6',
-            'eyes_color' => 'black'
-        }
-    }
-}, "commentjson";
-
+is $p->reproduce_json($commentjson), $commentjson, "commentjson";
 
 # https://github.com/Dynalon/JsonConfig/blob/master/JsonConfig.Tests/JSON/Arrays.json
-
-$data = $p->parse_json(<<'JSON');
+my $jsonconfig = <<'JSON';
 # Comments can be placed when ~~a line starts with (whitespace +)~~ anywhere
 // hint: ~~strikethrough text~~ https://help.github.com/articles/github-flavored-markdown/
 {
@@ -272,44 +186,7 @@ $data = $p->parse_json(<<'JSON');
 }
 JSON
 
-
-is_deeply $data, eval q{
-    {
-      Coords1 => {
-        Pairs => [
-          {
-            X => 1,
-            Y => 1
-          },
-          {
-            X => 2,
-            Y => 3
-          }
-        ]
-      },
-      Coords2 => {
-        Pairs => []
-      },
-      Default => "arrays",
-      EmptyFruit => {
-        Fruit => []
-      },
-      Fruit1 => {
-        Fruit => [
-          "apple",
-          "banana",
-          "melon"
-        ]
-      },
-      Fruit2 => {
-        Fruit => [
-          "apple",
-          "cherry",
-          "coconut"
-        ]
-      }
-    }
-}, 'Dynalon/JsonConfig';
+is $p->reproduce_json($jsonconfig), $jsonconfig, "Dynalon/JsonConfig";
 
 done_testing();
 
@@ -331,26 +208,38 @@ sub new {
             json         ::= object
                            | array
 
-            object       ::= ('{' '}')
-                           | ('{') members ('}')
+            object       ::= <left curly> <right curly>
+                           | <left curly> members <right curly>
 
-            members      ::= pair*                  separator => [,]
+            <left curly>   ~ '{'
+            <right curly>  ~ '}'
 
-            pair         ::= string (':') value
+            members      ::= pair
+            members      ::= members <comma> pair
+            <comma>        ~ ','
+
+            pair         ::= string <colon> value
+            <colon>        ~ ':'
 
             value        ::= string
                            | object
                            | number
                            | array
-                           | 'true'
-                           | 'false'
-                           | 'null'
+                           | <true>
+                           | <false>
+                           | <null>
 
+            <true>         ~ 'true'
+            <false>        ~ 'false'
+            <null>         ~ 'null'
 
-            array        ::= ('[' ']')
-                           | ('[') elements (']')
+            array        ::= <left square> <right square>
+                           | <left square> elements <right square>
+            <left square>  ~ '['
+            <right square> ~ ']'
 
-            elements     ::= value+                 separator => [,]
+            elements     ::= value
+            elements     ::= elements <comma> value
 
             number         ~ int
                            | int frac
@@ -416,8 +305,6 @@ END_OF_SOURCE
         }
     );
 
-    $parser->{discardables} = MarpaX::AST::Discardables->new;
-
     return $parser;
 }
 
@@ -430,6 +317,8 @@ sub parse {
             trace_terminals => 0,
         }
     );
+
+    $parser->{discardables} = MarpaX::AST::Discardables->new;
 
     my $json_ref    = \$json;
     my $json_length = length $json;
@@ -451,7 +340,10 @@ sub parse {
 #    warn MarpaX::AST::dumper($parser->{discardables});
 
     my $ast = ${ $recce->value() };
-    return $parser->decode ( $ast );
+
+#    warn MarpaX::AST::dumper($ast);
+
+    return $ast;
 
 } ## end sub parse
 
@@ -496,13 +388,46 @@ sub decode {
     {
         if ($ast eq 'true' or $ast eq 'false'){ return $ast eq 'true' }
         elsif ($ast eq 'null' ){ return undef }
-        else { warn "unknown scalar <$ast>"; return $ast }
+        else { warn "unknown scalar <$ast>"; return '' }
     }
 }
 
-sub parse_json {
-    my ($parser, $string) = @_;
-    return $parser->parse($string);
+sub decode_json {
+    my ($parser, $input) = @_;
+    return $parser->decode( $parser->parse($input) );
+}
+
+sub reproduce_json {
+    my ($parser, $input) = @_;
+
+    my $ast = MarpaX::AST->new( $parser->parse($input), { CHILDREN_START => 3 } );
+    my $discardables = $parser->{discardables};
+
+#    warn MarpaX::AST::dumper($discardables);
+#    warn $ast->sprint;
+
+    my $json = '';
+    my $visited = {};
+
+    $ast->decorate(
+        $discardables,
+        sub {
+            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
+            if ($where eq 'head'){
+                $json .= $discardables->span_text($span_before, $visited);
+            }
+            elsif ($where eq 'tail'){
+                $json .= $discardables->span_text($span_after, $visited);
+            }
+            elsif ($where eq 'node'){
+                return unless $ast->is_literal;
+                $json .= $discardables->span_text($span_before, $visited);
+                $json .= $ast->text;
+                $json .= $discardables->span_text($span_after, $visited);
+            }
+        } );
+
+    return $json;
 }
 
 sub decode_string {
