@@ -155,43 +155,43 @@ $data = $p->parse_json($big_test);
 
 is_deeply $data, eval q{
 {
-  'source' => '<a href="http://janetter.net/" rel="nofollow">Janetter</a>',
-  'geo' => {},
-  'in_reply_to_user_id_str' => '61233',
-  'id_str' => '281405942321532929',
-  'entities' => {
-                  'hashtags' => [],
-                  'media' => [],
-                  'user_mentions' => [
-                                       {
-                                         'name' => 'James Governor',
-                                         'id' => '61233',
-                                         'id_str' => '61233',
-                                         'indices' => [
-                                                        '0',
-                                                        '10'
-                                                      ],
-                                         'screen_name' => 'moankchips'
-                                       }
-                                     ],
-                  'urls' => []
-                },
-  'created_at' => 'Wed Dec 19 14:29:39 +0000 2012',
-  'in_reply_to_status_id_str' => '281400879465238529',
-  'text' => '@monkchips Ouch. Some regrets are harsher than others.',
-  'user' => {
-              'protected' => '',
-              'name' => 'Sarah Bourne',
-              'verified' => '',
-              'id' => '16010789',
-              'id_str' => '16010789',
-              'profile_image_url_https' => 'https://si0.twimg.com/profile_images/638441870/Snapshot-of-sb_normal.jpg',
-              'screen_name' => 'sarahebourne'
-            },
-  'in_reply_to_user_id' => '61233',
-  'id' => '281405942321532929',
-  'in_reply_to_status_id' => '281400879465238529',
-  'in_reply_to_screen_name' => 'monkchips'
+    'source' => '<a href="http://janetter.net/" rel="nofollow">Janetter</a>',
+    'geo' => {},
+    'in_reply_to_user_id_str' => '61233',
+    'id_str' => '281405942321532929',
+    'entities' => {
+        'hashtags' => [],
+        'media' => [],
+        'user_mentions' => [
+            {
+                'name' => 'James Governor',
+                'id' => '61233',
+                'id_str' => '61233',
+                'indices' => [
+                    '0',
+                    '10'
+                ],
+                'screen_name' => 'moankchips'
+            }
+        ],
+        'urls' => []
+    },
+    'created_at' => 'Wed Dec 19 14:29:39 +0000 2012',
+    'in_reply_to_status_id_str' => '281400879465238529',
+    'text' => '@monkchips Ouch. Some regrets are harsher than others.',
+    'user' => {
+        'protected' => '',
+        'name' => 'Sarah Bourne',
+        'verified' => '',
+        'id' => '16010789',
+        'id_str' => '16010789',
+        'profile_image_url_https' => 'https://si0.twimg.com/profile_images/638441870/Snapshot-of-sb_normal.jpg',
+        'screen_name' => 'sarahebourne'
+    },
+    'in_reply_to_user_id' => '61233',
+    'id' => '281405942321532929',
+    'in_reply_to_status_id' => '281400879465238529',
+    'in_reply_to_screen_name' => 'monkchips'
 }
 }, "big test";
 
@@ -200,7 +200,9 @@ $data = $p->parse_json(<<'JSON');
 JSON
 is($data->{test}, "\x{2603}", 'Unicode char');
 
-# commented json tests from https://commentjson.readthedocs.org/en/latest/
+# commented json tests
+
+# https://commentjson.readthedocs.org/en/latest/
 $data = $p->parse_json(<<'JSON');
 {
     "name": "Vaidik Kapoor", # Person's name
@@ -226,7 +228,88 @@ is_deeply $data, eval q{
             'eyes_color' => 'black'
         }
     }
-}, "commented json";
+}, "commentjson";
+
+
+# https://github.com/Dynalon/JsonConfig/blob/master/JsonConfig.Tests/JSON/Arrays.json
+
+$data = $p->parse_json(<<'JSON');
+# Comments can be placed when ~~a line starts with (whitespace +)~~ anywhere
+// hint: ~~strikethrough text~~ https://help.github.com/articles/github-flavored-markdown/
+{
+    "Default" : "arrays",
+    # This is a comment
+    "Fruit1":
+    {
+        "Fruit" :   ["apple", "banana", "melon"]
+    },
+    "Fruit2":
+    {
+        # This too is a comment
+        "Fruit" :   ["apple", "cherry", "coconut"]
+    },
+    "EmptyFruit":
+    {
+        "Fruit" : []
+    },
+    "Coords1":
+    {
+        "Pairs": [
+            {
+                "X" : 1,
+                "Y" : 1
+            },
+            {
+                "X" : 2,
+                "Y" : 3
+            }
+        ]
+    },
+    "Coords2":
+    {
+        "Pairs": []
+    }
+}
+JSON
+
+
+is_deeply $data, eval q{
+    {
+      Coords1 => {
+        Pairs => [
+          {
+            X => 1,
+            Y => 1
+          },
+          {
+            X => 2,
+            Y => 3
+          }
+        ]
+      },
+      Coords2 => {
+        Pairs => []
+      },
+      Default => "arrays",
+      EmptyFruit => {
+        Fruit => []
+      },
+      Fruit1 => {
+        Fruit => [
+          "apple",
+          "banana",
+          "melon"
+        ]
+      },
+      Fruit2 => {
+        Fruit => [
+          "apple",
+          "cherry",
+          "coconut"
+        ]
+      }
+    }
+}, 'Dynalon/JsonConfig';
 
 done_testing();
 
