@@ -334,6 +334,62 @@ sub distill{
     return $root;
 }
 
+# walk $ast, checking if spans of discardable nodes in $discardables
+# occur before after an ast node and call $callback on such spans,
+# ast node and context. The callback can insert discardable nodes
+# in $ast or concatenate them to literal nodes. A hash can be used
+# to avoid duplicate visits, if needed.
+sub decorate{
+    my ($ast, $discardables, $callback) = @_;
+
+    my $last_literal_node;
+
+    # discardable head
+    my $d_head_id = $discardables->starts(0);
+    if (defined $d_head_id){
+        my $span = $discardables->span( { start => $d_head_id } );
+#            warn @$span;
+        $callback->('head', $span, $ast, undef, undef);
+    }
+
+    my $opts = {
+        visit => sub {
+            my ($ast, $ctx) = @_;
+
+            if ( $ast->is_literal ){
+                $last_literal_node = $ast
+            }
+
+            # get node data
+            my ($node_id, $node_text_start, $node_text_length) = @$ast;
+            my $node_text_end = $node_text_start + $node_text_length;
+
+            # see if there is a discardable before
+            my $id_before = $discardables->ends($node_text_start);
+            my $span_before = defined $id_before ?
+                $discardables->span( { end => $id_before } ) : undef;
+
+            # see if there is a discardable after
+            my $id_after = $discardables->starts($node_text_end);
+            my $span_after = defined $id_after ?
+                $discardables->span( { start => $id_after } ) : undef;
+
+#            warn "# $node_id, $start, $length:\n", $ast->sprint;
+            $callback->('node', $span_before, $ast, $span_after, $ctx);
+        }
+    }; ## opts
+    $ast->walk( $opts );
+
+    # discardable tail
+    my (undef, $start, $length, undef) = @$last_literal_node;
+    my $d_tail_id = $discardables->starts($start + $length);
+    if (defined $d_tail_id){
+        my $span = $discardables->span( { start => $d_tail_id } );
+#            warn @$span;
+        $callback->('tail', undef, $ast, $span, { last_literal_node => $last_literal_node });
+    }
+}
+
 sub dumper{
   use Data::Dumper;
   {

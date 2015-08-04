@@ -31,60 +31,34 @@ sub slurp_file{
     return $slurp;
 }
 
-sub ast_decorate{
-    my ($ast, $discardables, $callback) = @_;
+sub reproduce_lua_src{
+    my ($ast, $discardables) = @_;
 
-    my $last_literal_node;
+    my $src = '';
+    my $visited = {};
 
-    # discardable head
-    my $d_head_id = $discardables->starts(0);
-    if (defined $d_head_id){
-        my $span = $discardables->span( { start => $d_head_id } );
-#            warn @$span;
-        $callback->('head', $span, $ast, undef, undef);
-    }
-
-    my $opts = {
-        visit => sub {
-            my ($ast, $ctx) = @_;
-
-#            return unless $ast->is_literal;
-
-            if ( $ast->is_literal ){
-                $last_literal_node = $ast
+    $ast->decorate(
+        $discardables,
+        sub {
+            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
+            if ($where eq 'head'){
+                $src .= $discardables->span_text($span_before, $visited);
             }
+            elsif ($where eq 'tail'){
+                $src .= $discardables->span_text($span_after, $visited);
+            }
+            elsif ($where eq 'node'){
+                return unless $ast->is_literal;
+                $src .= reverse $discardables->span_text($span_before, $visited);
+                $src .= $ast->text;
+                $src .= $discardables->span_text($span_after, $visited);
+            }
+        } );
 
-            # get node data
-            my ($node_id, $node_text_start, $node_text_length) = @$ast;
-            my $node_text_end = $node_text_start + $node_text_length;
-
-            # see if there is a discardable before
-            my $id_before = $discardables->ends($node_text_start);
-            my $span_before = defined $id_before ?
-                $discardables->span( { end => $id_before } ) : undef;
-
-            # see if there is a discardable after
-            my $id_after = $discardables->starts($node_text_end);
-            my $span_after = defined $id_after ?
-                $discardables->span( { start => $id_after } ) : undef;
-
-#            warn "# $node_id, $start, $length:\n", $ast->sprint;
-            $callback->('node', $span_before, $ast, $span_after, $ctx);
-        }
-    }; ## opts
-    $ast->walk( $opts );
-
-    # discardable tail
-    my (undef, $start, $length, undef) = @$last_literal_node;
-    my $d_tail_id = $discardables->starts($start + $length);
-    if (defined $d_tail_id){
-        my $span = $discardables->span( { start => $d_tail_id } );
-#            warn @$span;
-        $callback->('tail', undef, $ast, $span, { last_literal_node => $last_literal_node });
-    }
+    return $src;
 }
 
-#my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
+#my $lua_parser_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
 #my @lua_files = qw{ echo.lua };
 
 my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
@@ -133,29 +107,7 @@ for my $lua_file (@lua_files){
 
 #        warn $ast->sprint;
 
-    # walk ast and see which nodes have discardables before/after them
-    my $src = '';
-    my $visited = {};
-
-    ast_decorate(
-        $ast, $discardables,
-        sub {
-            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
-            if ($where eq 'head'){
-                $src .= $discardables->span_text($span_before, $visited);
-            }
-            elsif ($where eq 'tail'){
-                $src .= $discardables->span_text($span_after, $visited);
-            }
-            elsif ($where eq 'node'){
-                return unless $ast->is_literal;
-                $src .= reverse $discardables->span_text($span_before, $visited);
-                $src .= $ast->text;
-                $src .= $discardables->span_text($span_after, $visited);
-            }
-        } );
-
-    eq_or_diff $src, $lua_src, qq{$lua_dir/$lua_file};
+    eq_or_diff reproduce_lua_src($ast, $discardables), $lua_src, qq{$lua_dir/$lua_file};
 }
 
 done_testing();
