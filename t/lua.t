@@ -143,27 +143,13 @@ for my $lua_file (@lua_files){
             my ($where, $span_before, $ast, $span_after, $ctx) = @_;
             if ($where eq 'head'){
                 $src .= $discardables->span_text($span_before, $visited);
-=pod
-                for my $span_id (@$span_before){
-                    # return would be fine too
-                    last if exists $visited->{$span_id};
-                    $src .= $discardables->value($span_id);
-                    $visited->{$span_id}++;
-                }
-=cut
             }
             elsif ($where eq 'tail'){
                 $src .= $discardables->span_text($span_after, $visited);
-=pod
-                for my $span_id (@$span_after){
-                    last if exists $visited->{$span_id};
-                    $src .= $discardables->value($span_id);
-                    $visited->{$span_id}++;
-                }
-=cut
             }
             elsif ($where eq 'node'){
                 return unless $ast->is_literal;
+
                 if (defined $span_before){
                     my $span_text = '';
                     for my $span_id (@$span_before){
@@ -173,18 +159,9 @@ for my $lua_file (@lua_files){
                     }
                     $src .= $span_text;
                 }
+
                 $src .= $ast->text;
-                if (defined $span_after){
-                    $src .= $discardables->span_text($span_after, $visited);
-=pod
-                    my $node_text = '';
-                    for my $span_id (@$span_after){
-                        last if exists $visited->{$span_id};
-                        $src .= $discardables->value($span_id);
-                        $visited->{$span_id}++;
-                    }
-=cut
-                }
+                $src .= $discardables->span_text($span_after, $visited);
             }
         } );
 

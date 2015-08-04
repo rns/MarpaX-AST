@@ -516,8 +516,12 @@ sub span{
     return $span;
 }
 
+# returns concatenated texts of discardable nodes in $span
+# or empty string if $span is not defined
+# if $visited is defined, concatenates until discardable nodes is met again
 sub span_text{
     my ($self, $span, $visited) = @_;
+    return '' unless defined $span;
     my $defined_visited = defined $visited;
     my $span_text = '';
     for my $discardable_id (@$span){
