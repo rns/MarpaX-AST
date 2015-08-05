@@ -158,7 +158,7 @@ sub children{
 
 sub children_count{
     my ($ast) = @_;
-    return @$ast - 1 - $CHILDREN_START;
+    return @$ast - $CHILDREN_START;
 }
 
 # remove children for which $remove sub returns a true value
