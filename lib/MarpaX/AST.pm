@@ -136,22 +136,21 @@ sub append_child{
     return $ast->[-1];
 }
 
-# set the node's children to $children array ref if caller provides it,
-# if $children is a CODE ref, returns the nodes' children for which $children->($child) returns 1
-# return children
-# todo: rename $children to $new_children
+# if $new_children is an array ref, sets $ast children to it and returns newly set children
+# if $new_children is a code ref, returns $ast children for which $children->($child) returns 1
+# if $new_children is undefined, returns $ast children
 sub children{
-    my ($ast, $children) = @_;
+    my ($ast, $new_children) = @_;
     my ($node, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
-    if (defined $children){
-        if (ref $children eq "CODE"){
+    if (defined $new_children){
+        if (ref $new_children eq "CODE"){
             my $found = [];
             for my $ix (0..$#children){
-                push @$found, $children[$ix] if $children->( $children[$ix], $ix );
+                push @$found, $children[$ix] if $new_children->( $children[$ix], $ix );
             }
         }
-        elsif (ref $children eq "ARRAY") {
-            splice @$ast, $CHILDREN_START, @$ast-$CHILDREN_START, @$children; # replace all children
+        elsif (ref $new_children eq "ARRAY") {
+            splice @$ast, $CHILDREN_START, @$ast-$CHILDREN_START, @$new_children;
         }
     }
     return \@children;
