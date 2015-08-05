@@ -509,7 +509,7 @@ sub get {
 # $id can be a numeric id or array ref of a discardable node
 sub attr {
     my ($self, $id, $val, $attr_ix) = @_;
-    my $discardable = ref $id eq "ARRAY" ? $id : $self->get($id);
+    my $discardable = ref $id eq "ARRAY" ? $id : $self->{nodes}->[$id];
     defined $val and $discardable->[$attr_ix] = $val;
     return $discardable->[$attr_ix];
 }
@@ -552,7 +552,9 @@ sub ends{
 }
 
 # returns a ref to array of id’s belonging to a span of contiguous discardables
-# starting or ending at $head_id or [ $head_id ] if no span starts or ends there
+# starting or ending at $curr_id or [ $curr_id ] if no span starts or ends there
+# $curr_id is passes as $opts->{start} or $opts->{end} meaning stepping forwards
+# or backwards through the nodes array
 sub span{
     my ($self, $opts) = @_;
     # set start and direction (negative $step means backwards)
@@ -569,11 +571,12 @@ sub span{
     else{
         croak "start or end id must be defined";
     }
-    # form the sspan
-    my $span = [ ];
+    # form the span
+    my $span = [ $curr_id ];
+    my $nodes = $self->{nodes};
     for (
-            my $next_id = $curr_id;
-            my $next_node = $self->get($next_id);
+            my $next_id = $curr_id + 1;
+            my $next_node = $self->{nodes}->[$next_id];
             $next_id += $step
         )
     {
@@ -581,13 +584,16 @@ sub span{
 #        warn $self->start($next_node);
 #        warn $self->end($curr_id);
         # loop while discardables are contiguous, i.e.
+        my $curr_node = $nodes->[$curr_id];
         if ($step > 0) {
             # if forwards next node starts after the current ends
-            last if $next_node > $curr_id and $self->start($next_node) > $self->end($curr_id);
+            last if $next_id > $curr_id and
+                    $next_node->[START] > $curr_node->[START] + $curr_node->[LENGTH];
         }
         elsif ($step < 0) {
             # if backwards next node ends after the current starts
-            last if $next_node < $curr_id and $self->end($next_node) < $self->start($curr_id);
+            last if $next_id < $curr_id and
+                    $next_node->[START] + $next_node->[LENGTH] < $curr_node->[START];
         }
         push @$span, $next_id;
         $curr_id = $next_id;
