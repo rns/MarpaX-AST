@@ -67,13 +67,19 @@ sub id{
     return $ast->[0];
 }
 
-# return true if the node is literal node -- [ 'name', 'value' ]
+# return true if the node is a literal -- [ 'name', ..., 'value' ]
 sub is_literal{
     my ($ast) = @_;
     my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
 #    warn "is_literal: $node_id, @children", $node_id eq '#text';
+    # check for bare literal
     return 1 if $node_id eq '#text';
-    return ( (@children == 1) and (not ref $children[0]) );
+    # a node is literal if it has ...
+    return (
+        @children == 1 and          # ... only one child,
+        defined $children[0] and    # which is defined,
+        not ref $children[0]        # and is a scalar
+    );
 }
 
 sub descendant{
