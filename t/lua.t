@@ -51,6 +51,11 @@ for my $lua_file (@lua_files){
 
     $ast = MarpaX::AST->new( $ast, { CHILDREN_START => 3 } );
 
+# silence "Deep recursion on" warning
+BEGIN { $SIG{'__WARN__'} =
+    sub { warn $_[0] unless $_[0] =~ /Deep recursion|Redundant argument in sprintf/ }
+};
+
 #    warn MarpaX::AST::dumper($ast);
 #    warn $ast->sprint;
     my %skip_always = map { $_ => 1 } (
