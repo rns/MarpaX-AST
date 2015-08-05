@@ -1,4 +1,4 @@
-#!bash
+#!/usr/bin/bash
 prove -l -Ilib
 
 cd ../MarpaX-Regex
