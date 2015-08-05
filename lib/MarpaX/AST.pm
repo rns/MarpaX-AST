@@ -439,18 +439,18 @@ use Carp;
 
 =pod Overview
 
-A discardable is an input span typically discarded by a parser,
-e.g. whitespace or comment. For a particular input span ($start, $end)
-we need to know if it has a discradable before or after it, i.e.
-ending at $start or starting at $end.
+A discardable node (‘discardable’ or ‘node’) is an input span typically
+discarded by a parser, e.g. whitespace or comment. For a particular
+input span ($start, $end) we need to know if it has a discradable
+before or after it, i.e. ending at $start or starting at $end.
 
-Discardables are stored as an array of AST nodes
--- [ $node_id, $start, $length, $value ] --
-or if merged, as spans which are another instance of MarpaX::AST::Discardables
+Discardables are stored as an array of nodes bless()’able to MarpaX::AST
 
-# todo: use lexeme ID’s, <short/long comment>
-$type is node_id: currently 'whitespace' or 'short comment' or 'long comment'
-$value is input span starting at $start and ending at $start + $length
+    [ $node_id, $start, $length, $value ]
+
+contiguous discardable nodes of the same $node_id are merged
+
+$value is the input span starting at $start and ending at $start + $length
 
 =cut
 
@@ -497,10 +497,6 @@ sub post{
     return $id;
 }
 
-sub put{
-    my ($self, $start, $length, $discardable) = @_;
-}
-
 # return discardable at index $ix or undef if there is none
 sub get {
     my ($self, $ix) = @_;
@@ -510,6 +506,7 @@ sub get {
 
 # set value of attribute $ix of discardable $id, if provided,
 # return attribute $ix of discardable $id
+# $id can be a numeric id or array ref of a discardable node
 sub attr {
     my ($self, $id, $val, $attr_ix) = @_;
     my $discardable = ref $id eq "ARRAY" ? $id : $self->get($id);
@@ -615,4 +612,3 @@ sub span_text{
 }
 
 1;
-
