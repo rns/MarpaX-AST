@@ -224,13 +224,24 @@ sub walk{
 # Marpa AST node types
 # normal                            : [ $node_id, ..., $child1, $child2, ... ]
 # lexeme (literal, leaf, terminal)  : [ $node_id, ..., $text ]
+# bare literal ('text' in SLIF)     : $text
 # nulled                            : [ $node_id, ..., undef ]
 sub do_walk{
     my ($ast, $opts ) = @_;
 
-    unless (ref $ast){
-        croak "bare literals aren't compatible with CHILDREN_START=CHILDREN_START: use literals_as_text in distill()" if $CHILDREN_START > 1;
-        $ast = CORE::bless [ '#text', $ast ], __PACKAGE__ ;
+    # check for and skip nulled nodes
+    return unless defined $ast;
+
+    # check for and bless bare literal nodes
+    if (not ref $ast){
+        my $node = [ '#text' ];
+        if ($CHILDREN_START > 1){
+            push @$node, undef for 1..$CHILDREN_START-1;
+            carp $CHILDREN_START - 1, " undef's are inserted between node id and first child at $CHILDREN_START";
+            warn dumper($ast);
+        }
+        push @$node, $ast;
+        $ast = CORE::bless $node, __PACKAGE__ ;
     }
 
     state $context;
