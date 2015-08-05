@@ -52,31 +52,31 @@ $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
 my $expected_distilled = <<EOS;
  root
-   Testing.User
-   Info
-     Testing.Info
-     Name
-       System.String
-       Matt
-     Age
-       System.Int32
-       21
-   Description
-     System.String
-     This is some description
+   name 'Testing.User'
+   subname
+     #text 'Info'
+     name 'Testing.Info'
+     subname
+       #text 'Name'
+       name 'System.String'
+       string 'Matt'
+     subname
+       #text 'Age'
+       name 'System.Int32'
+       string '21'
+   subname
+     #text 'Description'
+     name 'System.String'
+     string 'This is some description'
 EOS
 
 my $dast = $ast->distill({
     root => 'root',
     skip => [ 'start', 'values', 'value', 'subseries' ],
-    dont_visit => [
-        'series'
-        ],
-    literals_as_text => 1,
+# todo: explain dont_visit vs. skip
+    dont_visit => [ 'series' ],
 });
 
-# todo: is literals_as_text really needed?
-# it may violate start/length parent/child relations
 
 # todo: make a data structure and test with is_deeply
 =pod DSL to convert AST to a data structure
