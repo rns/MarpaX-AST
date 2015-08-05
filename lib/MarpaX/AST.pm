@@ -388,6 +388,7 @@ sub decorate{
     }
 }
 
+# reproduces the exact source text using $discardables
 sub roundtrip{
     my ($ast, $discardables) = @_;
 
