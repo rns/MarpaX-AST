@@ -57,8 +57,7 @@ sub MarpaX::AST::bless{
 
 }
 
-# set node id if caller provides it,
-# return node id
+# set node id if caller provides it, return node id
 sub id{
     my ($ast, $id) = @_;
     if (defined $id){
@@ -67,7 +66,13 @@ sub id{
     return $ast->[0];
 }
 
-# return true if the node is a literal -- [ 'name', ..., 'value' ]
+# return true if node is nulled -- [ 'name', ..., undef ]
+sub is_nulled{
+    my ($ast) = @_;
+    return not defined $ast->first_child;
+}
+
+# return true if node is a literal -- [ 'name', ..., 'value' ]
 sub is_literal{
     my ($ast) = @_;
     my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
@@ -427,6 +432,8 @@ sub roundtrip{
                 $source .= $discardables->span_text($span_after, $visited);
             }
             elsif ($where eq 'node'){
+                # todo this line texts is_nulled(), move it to the test suite
+#                warn "# nulled! " . dumper($ast) if $ast->is_nulled;
                 return unless $ast->is_literal;
                 $source .= $discardables->span_text($span_before, $visited);
                 $source .= $ast->text;
