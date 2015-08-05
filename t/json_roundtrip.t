@@ -37,7 +37,7 @@ my $json_one_liners = [
 ];
 
 for my $json_one_liner (@$json_one_liners){
-    is $p->reproduce_json($json_one_liner), $json_one_liner, $json_one_liner;
+    is $p->roundtrip_json($json_one_liner), $json_one_liner, $json_one_liner;
 }
 
 my $locations = <<JSON;
@@ -65,7 +65,7 @@ my $locations = <<JSON;
 ]
 JSON
 
-is $p->reproduce_json($locations), $locations, "locations";
+is $p->roundtrip_json($locations), $locations, "locations";
 
 my $image = <<'JSON';
 # this is a hash comment to image json file test
@@ -85,7 +85,7 @@ my $image = <<'JSON';
 // c++ style comment at the end
 JSON
 
-is $p->reproduce_json($image), $image, "image";
+is $p->roundtrip_json($image), $image, "image";
 
 my $big_test = <<'JSON';
 // This is c++ style comment to janetter.net json test
@@ -127,7 +127,7 @@ my $big_test = <<'JSON';
 }
 JSON
 
-is $p->reproduce_json($big_test), $big_test, "janetter.net";
+is $p->roundtrip_json($big_test), $big_test, "janetter.net";
 
 # https://commentjson.readthedocs.org/en/latest/
 my $commentjson = <<JSON;
@@ -145,7 +145,7 @@ my $commentjson = <<JSON;
 }
 JSON
 
-is $p->reproduce_json($commentjson), $commentjson, "commentjson";
+is $p->roundtrip_json($commentjson), $commentjson, "commentjson";
 
 # https://github.com/Dynalon/JsonConfig/blob/master/JsonConfig.Tests/JSON/Arrays.json
 my $jsonconfig = <<'JSON';
@@ -187,7 +187,7 @@ my $jsonconfig = <<'JSON';
 }
 JSON
 
-is $p->reproduce_json($jsonconfig), $jsonconfig, "Dynalon/JsonConfig";
+is $p->roundtrip_json($jsonconfig), $jsonconfig, "Dynalon/JsonConfig";
 
 # https://code.google.com/p/orthanc/source/browse/Resources/Configuration.json
 my $orthanc_config = <<JSON;
@@ -429,7 +429,7 @@ my $orthanc_config = <<JSON;
 }
 JSON
 
-is $p->reproduce_json($orthanc_config), $orthanc_config,
+is $p->roundtrip_json($orthanc_config), $orthanc_config,
     "heavily commented real-life example from orthanc";
 
 # https://gist.github.com/etrepat/1289965
@@ -620,7 +620,7 @@ my $sublimetext2 = <<JSON;
 JSON
 #'
 
-is $p->reproduce_json($sublimetext2), $sublimetext2,
+is $p->roundtrip_json($sublimetext2), $sublimetext2,
     "Sublime Text 2 settings";
 
 # https://github.com/ether/etherpad-lite/wiki/Example-Production-Settings.JSON
@@ -695,7 +695,7 @@ my $etherpad_lite = <<JSON;
 }
 JSON
 
-is $p->reproduce_json($etherpad_lite), $etherpad_lite,
+is $p->roundtrip_json($etherpad_lite), $etherpad_lite,
     "etherpad-lite settings";
 
 done_testing();
@@ -904,37 +904,13 @@ sub decode_json {
     return $parser->decode( $parser->parse($input) );
 }
 
-sub reproduce_json {
+sub roundtrip_json {
     my ($parser, $input) = @_;
 
     my $ast = MarpaX::AST->new( $parser->parse($input), { CHILDREN_START => 3 } );
     my $discardables = $parser->{discardables};
 
-#    warn MarpaX::AST::dumper($discardables);
-#    warn $ast->sprint;
-
-    my $json = '';
-    my $visited = {};
-
-    $ast->decorate(
-        $discardables,
-        sub {
-            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
-            if ($where eq 'head'){
-                $json .= $discardables->span_text($span_before, $visited);
-            }
-            elsif ($where eq 'tail'){
-                $json .= $discardables->span_text($span_after, $visited);
-            }
-            elsif ($where eq 'node'){
-                return unless $ast->is_literal;
-                $json .= $discardables->span_text($span_before, $visited);
-                $json .= $ast->text;
-                $json .= $discardables->span_text($span_after, $visited);
-            }
-        } );
-
-    return $json;
+    return $ast->roundtrip($discardables);
 }
 
 sub decode_string {

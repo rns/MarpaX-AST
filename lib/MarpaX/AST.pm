@@ -390,6 +390,33 @@ sub decorate{
     }
 }
 
+sub roundtrip{
+    my ($ast, $discardables) = @_;
+
+    my $source = '';
+    my $visited = {};
+
+    $ast->decorate(
+        $discardables,
+        sub {
+            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
+            if ($where eq 'head'){
+                $source .= $discardables->span_text($span_before, $visited);
+            }
+            elsif ($where eq 'tail'){
+                $source .= $discardables->span_text($span_after, $visited);
+            }
+            elsif ($where eq 'node'){
+                return unless $ast->is_literal;
+                $source .= $discardables->span_text($span_before, $visited);
+                $source .= $ast->text;
+                $source .= $discardables->span_text($span_after, $visited);
+            }
+        } );
+
+    return $source;
+}
+
 sub dumper{
   use Data::Dumper;
   {

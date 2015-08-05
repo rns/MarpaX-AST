@@ -31,33 +31,6 @@ sub slurp_file{
     return $slurp;
 }
 
-sub reproduce_lua_src{
-    my ($ast, $discardables) = @_;
-
-    my $src = '';
-    my $visited = {};
-
-    $ast->decorate(
-        $discardables,
-        sub {
-            my ($where, $span_before, $ast, $span_after, $ctx) = @_;
-            if ($where eq 'head'){
-                $src .= $discardables->span_text($span_before, $visited);
-            }
-            elsif ($where eq 'tail'){
-                $src .= $discardables->span_text($span_after, $visited);
-            }
-            elsif ($where eq 'node'){
-                return unless $ast->is_literal;
-                $src .= $discardables->span_text($span_before, $visited);
-                $src .= $ast->text;
-                $src .= $discardables->span_text($span_after, $visited);
-            }
-        } );
-
-    return $src;
-}
-
 #my $lua_parser_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
 #my @lua_files = qw{ echo.lua };
 
@@ -107,7 +80,7 @@ for my $lua_file (@lua_files){
 
 #        warn $ast->sprint;
 
-    eq_or_diff reproduce_lua_src($ast, $discardables), $lua_src, qq{$lua_dir/$lua_file};
+    eq_or_diff $ast->roundtrip($discardables), $lua_src, qq{$lua_dir/$lua_file};
 }
 
 done_testing();
