@@ -150,7 +150,7 @@ sub children{
             }
         }
         elsif (ref $new_children eq "ARRAY") {
-            splice @$ast, $CHILDREN_START, @$ast-$CHILDREN_START, @$new_children;
+            splice @$ast, $CHILDREN_START, @$ast - $CHILDREN_START, @$new_children;
         }
     }
     return \@children;
