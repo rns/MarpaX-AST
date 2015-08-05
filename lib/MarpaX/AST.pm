@@ -78,7 +78,7 @@ sub is_literal{
 
 sub descendant{
     my ($ast, $level) = @_;
-    $ast = $ast->[$CHILDREN_START] for (1..$level);
+    $ast = $ast->[$CHILDREN_START] for 1..$level;
     return $ast;
 }
 
