@@ -273,7 +273,6 @@ sub sprint{
         my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
-#            warn "$node_id, $children[0]";
             $s .= qq{$indent $node_id '$children[0]'\n};
         }
         else{
