@@ -111,10 +111,7 @@ sub make_hash_map{
         }
         elsif ($id eq 'pair' or $id eq 'signature_item'){
 
-# todo: this fails
-#            my ($k, $v) = $dast->children();
-# this works
-            my ($k, $v) = map { $dast->child($_) } (0, 1);
+            my ($k, $v) = @{ $dast->children() };
 
 # todo: why this returns undef?
 #            warn $v->is_literal;
