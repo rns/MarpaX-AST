@@ -221,6 +221,10 @@ sub walk{
     return do_walk( $ast, $opts );
 }
 
+# Marpa AST node types
+# normal                            : [ $node_id, ..., $child1, $child2, ... ]
+# lexeme (literal, leaf, terminal)  : [ $node_id, ..., $text ]
+# nulled                            : [ $node_id, ..., undef ]
 sub do_walk{
     my ($ast, $opts ) = @_;
 
