@@ -58,29 +58,9 @@ BEGIN { $SIG{'__WARN__'} =
 
 #    warn MarpaX::AST::dumper($ast);
 #    warn $ast->sprint;
-    my %skip_always = map { $_ => 1 } (
-        'statements', 'chunk'
-    );
-
     $ast = $ast->distill({
         root => 'chunk',
-        skip => sub {
-            my ($ast, $ctx) = @_;
-            my ($node_id) = @$ast;
-=pod using parent/context to skip nodes
-            if ( $node_id eq 'exp' ){
-                if (    $ctx->{parent}->id eq 'stat'
-                    and $ctx->{parent}->first_child->id eq 'keyword if'){
-    #                warn qq{#parent:\n}, $ctx->{parent}->sprint, qq{\n#of\n}, $ast->sprint;
-                    return 0;
-                }
-                else{
-                    return 1;
-                }
-            }
-=cut
-            return exists $skip_always{ $node_id }
-        }
+        skip => [ 'statements', 'chunk' ],
     });
 
 #        warn $ast->sprint;
