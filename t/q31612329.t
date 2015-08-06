@@ -100,34 +100,37 @@ $ast = $ast->distill({
 sub make_hash_map{
     my ($ast) = @_;
 
-    if (not $ast->is_literal){
+    if ($ast->is_literal){ return $ast->text }
+    else{
         my $id = $ast->id;
         my $children = $ast->children;
         if ($id eq 'scutil'){ # root -- just pass throuth
             return make_hash_map(@$children);
         }
+        # hash
         elsif ($id eq 'dict' or $id eq 'signature'){
             return { map { make_hash_map($_) } @$children };
         }
+        # hash item
         elsif ($id eq 'pair' or $id eq 'signature_item'){
             my ($k, $v) = @{ $ast->children() };
             return $k->text => make_hash_map($v);
         }
+        # array
         elsif ($id eq 'array'){
             # todo: item nodes not sorted by index
             return [ map { make_hash_map($_) } @$children ];
         }
+        # array item
         elsif ($id eq 'item'){
             my ($i, $v) = map { $ast->child($_) } (0, 1);
             # this assumes that item nodes are sorted by index
             return make_hash_map($v);
         }
+        # pass through
         else {
             return make_hash_map($_) for @$children;
         }
-    }
-    else{
-        return $ast->text;
     }
 }
 
