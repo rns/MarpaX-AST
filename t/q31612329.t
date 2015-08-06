@@ -104,7 +104,8 @@ sub make_hash_map{
     else{
         my $id = $ast->id;
         my $children = $ast->children;
-        if ($id eq 'scutil'){ # root -- just pass throuth
+        # root -- just pass through
+        if ($id eq 'scutil'){
             return make_hash_map(@$children);
         }
         # hash
