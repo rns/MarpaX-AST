@@ -119,8 +119,11 @@ sub make_hash_map{
         }
         # array
         elsif ($id eq 'array'){
-            # todo: item nodes not sorted by index
-            return [ map { make_hash_map($_) } @$children ];
+            return [
+                # todo: item nodes not sorted by index
+                # by checking of the returned array item is [ $ix, $value ] or $value
+                map { make_hash_map($_) } @$children
+            ];
         }
         # array item
         elsif ($id eq 'item'){
