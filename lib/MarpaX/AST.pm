@@ -432,8 +432,6 @@ sub roundtrip{
                 $source .= $discardables->span_text($span_after, $visited);
             }
             elsif ($where eq 'node'){
-                # todo this line texts is_nulled(), move it to the test suite
-#                warn "# nulled! " . dumper($ast) if $ast->is_nulled;
                 return unless $ast->is_literal;
                 $source .= $discardables->span_text($span_before, $visited);
                 $source .= $ast->text;

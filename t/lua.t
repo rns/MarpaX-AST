@@ -55,12 +55,18 @@ for my $lua_file (@lua_files){
 
     $ast = MarpaX::AST->new( $ast, { CHILDREN_START => 3 } );
 
-    # todo: test for is_nulled() in constructs.lua
-
-# silence "Deep recursion on" warning
-BEGIN { $SIG{'__WARN__'} =
-    sub { warn $_[0] unless $_[0] =~ /Deep recursion|Redundant argument in sprintf/ }
-};
+    # test for is_nulled() in constructs.lua
+    if ($lua_file =~ m/constructs.lua$/){
+        my $nulled = [];
+        my $expected_nulled = [
+          [ "block", 806, 0, undef ],
+          [ "block", 822, 0, undef ],
+          [ "block", 849, 0, undef ],
+          [ "block", 867, 0, undef ],
+        ];
+        $ast->walk({ visit => sub { push @$nulled, $_[0] if $_[0]->is_nulled() } });
+        is_deeply $nulled, $expected_nulled, "nulled nodes";
+    }
 
 #    warn MarpaX::AST::dumper($ast);
 #    warn $ast->sprint;
