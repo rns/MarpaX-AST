@@ -14,9 +14,13 @@ use_ok 'MarpaX::AST';
 
 my $parser_module_dir;
 BEGIN{
+    # set dit for lua source files
     $parser_module_dir = '../MarpaX-Languages-Lua-AST';
     $parser_module_dir = qq{../$parser_module_dir}
         unless $ENV{HARNESS_ACTIVE};
+    # silence "Deep recursion on" warning
+    $SIG{'__WARN__'} = sub {
+        warn $_[0] unless $_[0] =~ /Deep recursion|Redundant argument in sprintf/ }
 }
 
 use lib qq{$parser_module_dir/lib};
