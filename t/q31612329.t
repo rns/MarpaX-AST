@@ -88,21 +88,21 @@ $ast = MarpaX::AST->new( $$ast );
 
 #say MarpaX::AST::dumper($ast);
 
-my $dast = $ast->distill({
+$ast = $ast->distill({
     root => '',
     skip => [ 'path', '#text', 'value', 'items', 'pairs', 'signature_item_value' ],
 });
 
-#say "# distilled:\n", MarpaX::AST::dumper($dast);
+#say "# distilled:\n", MarpaX::AST::dumper($ast);
 
-#say $dast->sprint;
+#say $ast->sprint;
 
 sub make_hash_map{
-    my ($dast) = @_;
+    my ($ast) = @_;
 
-    if (not $dast->is_literal){
-        my $id = $dast->id;
-        my $children = $dast->children;
+    if (not $ast->is_literal){
+        my $id = $ast->id;
+        my $children = $ast->children;
         if ($id eq 'scutil'){ # root -- just pass throuth
             return make_hash_map(@$children);
         }
@@ -110,7 +110,7 @@ sub make_hash_map{
             return { map { make_hash_map($_) } @$children };
         }
         elsif ($id eq 'pair' or $id eq 'signature_item'){
-            my ($k, $v) = @{ $dast->children() };
+            my ($k, $v) = @{ $ast->children() };
             return $k->text => make_hash_map($v);
         }
         elsif ($id eq 'array'){
@@ -118,7 +118,7 @@ sub make_hash_map{
             return [ map { make_hash_map($_) } @$children ];
         }
         elsif ($id eq 'item'){
-            my ($i, $v) = map { $dast->child($_) } (0, 1);
+            my ($i, $v) = map { $ast->child($_) } (0, 1);
             # this assumes that item nodes are sorted by index
             return make_hash_map($v);
         }
@@ -127,11 +127,11 @@ sub make_hash_map{
         }
     }
     else{
-        return $dast->text;
+        return $ast->text;
     }
 }
 
-my $got_hash_map = make_hash_map($dast);
+my $got_hash_map = make_hash_map($ast);
 
 #warn "got_hash_map: ", MarpaX::AST::dumper( $got_hash_map );
 
