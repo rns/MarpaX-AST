@@ -17,9 +17,9 @@ my $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 
     start ::= series+
 
-    series  ::= ( '[' ) name ( ']' '|' ) values
+    series  ::= name ( '|' ) values
 
-    name    ~ 'Testing.User' | 'System.String' | 'Testing.Info' | 'System.Int32'
+    name    ~ '[Testing.User]' | '[System.String]' | '[Testing.Info]' | '[System.Int32]'
 
     values  ::= value+ separator => [|]
 
@@ -47,41 +47,79 @@ use MarpaX::AST;
 
 $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
-say MarpaX::AST::dumper($ast);
-#say $ast->sprint;
+#warn MarpaX::AST::dumper($ast);
+#warn $ast->sprint;
 
 my $expected_distilled = <<EOS;
  root
-   Testing.User
+   #text '[Testing.User]'
    Info
-     Testing.Info
+     #text '[Testing.Info]'
      Name
-       System.String
-       Matt
+       #text '[System.String]'
+       #text 'Matt'
      Age
-       System.Int32
-       21
+       #text '[System.Int32]'
+       #text '21'
    Description
-     System.String
-     This is some description
+     #text '[System.String]'
+     #text 'This is some description'
 EOS
 
 $ast = $ast->distill({
     root => 'root',
+# todo: fails with value and/or subname and qw{start values} in skip =>
     skip => [ qw{ start values value subseries } ],
 # todo: explain dont_visit vs. skip
+# todo: fails with subname
     dont_visit => [ qw{ series } ],
-#    append_literals_as_parents => 1 # applies to all literals
+    append_literals_as_parents => 1 # applies to all literals
 # todo: test append_literals_as_parents => 1
-    append_literals_as_parents => [ qw{ name subname string } ]
+#    append_literals_as_parents => [ qw{ name subname string } ]
 });
 
+# name, [ children ]
 
-say MarpaX::AST::dumper($ast);
-say $ast->sprint;
+#warn MarpaX::AST::dumper($ast);
+warn $ast->sprint;
 
 my $got_distilled = $ast->sprint;
 
-is $got_distilled, $expected_distilled, "complex-string-splitting, SO Question 30633258";
+is $got_distilled, $expected_distilled, "SO Question 30633258: distill";
+
+my $exported = $ast->export(
+    { array => [ 'root', 'Info', 'Name', 'Age', 'Description' ]
+# { named_array => [ 'Info', 'Name', 'Age', 'Description' ] }
+#    { array => [ 'root', 'name', 'subname', '#text', 'subseries' ]
+});
+
+warn MarpaX::AST::dumper($exported);
+
+my $expected_exported = eval q{
+[
+  "Testing.User",
+  [
+    "Info",
+    "Testing.Info",
+    [
+      "Name",
+      "System.String",
+      "Matt"
+    ],
+    [
+      "Age",
+      "System.Int32",
+      21
+    ]
+  ],
+  [
+    "Description",
+    "System.String",
+    "This is some description"
+  ]
+]
+};
+
+is_deeply $exported, $expected_exported, "SO Question 30633258: export";
 
 done_testing();
