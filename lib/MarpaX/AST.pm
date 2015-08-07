@@ -360,9 +360,23 @@ sub distill{
 
             my $child_to_append;
             if ($ast->is_literal()){
-                if ($opts->{append_literals_as_parents}){
+                # append only some literals as parents
+                if (ref $opts->{append_literals_as_parents} eq "HASH"){
+                    # append this literal as parent
+                    if (exists $opts->{append_literals_as_parents}->{$node_id}){
+                        $child_to_append = [ $children[0], @$ast[1..$CHILDREN_START-1] ];
+                    }
+                    # append this literal as child
+                    else{
+                        $child_to_append = $ast;
+                    }
+                }
+                # append all literals as parents
+                elsif ($opts->{append_literals_as_parents}){
+                    warn "as parent: $node_id";
                     $child_to_append = [ $children[0], @$ast[1..$CHILDREN_START-1] ]
                 }
+                # append all literals as children
                 else{
                     $child_to_append = $ast;
                 }
