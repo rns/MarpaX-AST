@@ -161,6 +161,7 @@ sub append_child{
 # if $new_children is an array ref, sets $ast children to it and returns newly set children
 # if $new_children is a code ref, returns $ast children for which $children->($child) returns 1
 # if $new_children is undefined, returns $ast children
+# if there no children, returns empty array
 sub children{
     my ($ast, $new_children) = @_;
     my ($node, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
