@@ -73,7 +73,13 @@ sub is_nulled{
     return not defined $ast->first_child;
 }
 
-# return true if node is a literal -- [ 'name', ..., 'value' ]
+# return true if node is a bare literal: [ '#text', $value ]
+sub is_bare_literal{
+    my ($ast) = @_;
+    return 1 if $ast->id eq '#text';
+}
+
+# return true if node is a literal: [ 'name', ..., 'value' ] or bare literal: [ '#text', $value ]
 sub is_literal{
     my ($ast) = @_;
     my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
