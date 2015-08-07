@@ -10,6 +10,8 @@ use Test::Differences;
 
 use Marpa::R2;
 
+use Carp::Always;
+
 use_ok 'MarpaX::AST';
 
 my $parser_module_dir;

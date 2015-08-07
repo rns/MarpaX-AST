@@ -47,7 +47,7 @@ use MarpaX::AST;
 
 $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
-#say MarpaX::AST::dumper($ast);
+say MarpaX::AST::dumper($ast);
 #say $ast->sprint;
 
 my $expected_distilled = <<EOS;
@@ -71,12 +71,12 @@ $ast = $ast->distill({
     skip => [ qw{ start values value subseries } ],
 # todo: explain dont_visit vs. skip
     dont_visit => [ qw{ series } ],
-    bare_literals => 1 # as in "make specified literals bare literals"
-#    bare_literals => [ name, string ] # bare
+    append_literals_as_parents => 1 # applies to all literals
+#    append_literals_as_parents => [ qw{ name, string } ] # applies to only specified literals
 });
 
 
-#say MarpaX::AST::dumper($ast);
+say MarpaX::AST::dumper($ast);
 say $ast->sprint;
 
 my $got_distilled = $ast->sprint;

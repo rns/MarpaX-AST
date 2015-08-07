@@ -357,8 +357,10 @@ sub distill{
                 $parents->[ $parent_ix ]->append_child(
                     $class->new(
                         $ast->is_literal() ?
-                            $opts->{bare_literals} ?
+                            $opts->{append_literals_as_parents} ?
+                                # literal becomes parent
                                 [ $children[0], @$ast[1..$CHILDREN_START-1] ]
+                                # literal remains child
                                 : $ast
                             : [ $node_id, @$ast[1..$CHILDREN_START-1] ]
                     )
