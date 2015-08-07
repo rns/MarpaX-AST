@@ -453,6 +453,74 @@ sub roundtrip{
     return $source;
 }
 
+# returns for debugging if smth. goes wrong
+# todo: ast_validate()
+sub validate{
+    my ($ast, $external_schema) = @_;
+    state $schema = internalize($external_schema);
+    # $ast must have all nodes in schema
+    # every child of a hash node must validate as hash_item
+    # every child of an array node must validate as array_item
+    # hash_item node must have exactly two children, the first of which must be a literal
+    # array_item node must have exactly two children, the first of which must be a literal
+    # or a single child
+    # todo: undefs?
+    return 1;
+}
+
+sub internalize{
+    my ($external_schema) = @_;
+    # convert array refs to hashes for node id lookup
+    while (my ($k, $v) = each %$external_schema){
+        my $v_href = {};
+        $v_href->{$_} = 1 for @$v;
+        $external_schema->{$k} = $v_href;
+    }
+    return $external_schema;
+}
+
+sub export{
+    my ($ast, $external_schema) = @_;
+
+    state $schema = internalize($external_schema);
+
+    if ($ast->is_literal){ return $ast->text }
+    else{
+        my $node_id = $ast->id;
+        my $children = $ast->children;
+        if (exists $schema->{hash}->{$node_id}){
+            return { map { $_->export() } @$children };
+        }
+        elsif (exists $schema->{hash_item}->{$node_id}){
+            my ($key, $value) = @$children;
+            return $key->text => $value->export();
+        }
+        elsif (exists $schema->{array}->{$node_id}){
+            my $items = [];
+            map {
+                my $item = $_->export();
+                # todo: validate $ast according to $schema
+                # assuming pre-validation
+                # array item is indexed [ $index, $value ]
+                if (ref $item) { $items->[ $item->[0] ] = $item->[1] }
+                # array item is bare (scalar)
+                else { push @$items, $item }
+            } @$children;
+            return $items;
+        }
+        elsif (exists $schema->{array_item}->{$node_id}){
+            if (@$children == 2){
+                my ($index, $value) = @$children;
+                return [ $index->text, $value->export() ];
+            }
+            elsif(@$children == 1){
+                return $children->[0]->export();
+            }
+        }
+        else{ return $_->export() for @$children }
+    }
+}
+
 sub dumper{
   use Data::Dumper;
   {
