@@ -557,9 +557,15 @@ sub export{
                 # todo: validate $ast according to $schema
                 # assuming pre-validation
                 # array item is indexed [ $index, $value ]
-                if (ref $item) { $items->[ $item->[0] ] = $item->[1] }
+                if (ref $item eq "HASH") {
+#                    warn "indexed array item ", dumper($item);
+                    $items->[ $item->{index} ] = $item->{value}
+                }
                 # array item is bare (scalar)
-                else { push @$items, $item }
+                else {
+#                    warn "unindexed array item ", dumper($item);
+                    push @$items, $item
+                }
             } @$children;
             return $items;
         }
@@ -568,7 +574,7 @@ sub export{
             if (@$children == 2){
 #                warn "indexed array item";
                 my ($index, $value) = @$children;
-                return [ $index->text, $value->export() ];
+                return { index => $index->text, value => $value->export() };
             }
             elsif(@$children == 1){
                 return $children->[0]->export();
