@@ -330,7 +330,7 @@ sub distill{
     my $root = $class->new( [ $opts->{root}, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
-    $opts->{literals_as_text} //= 0;
+    $opts->{bare_literals} //= 0;
 
     $ast->walk( {
         skip =>
@@ -357,7 +357,7 @@ sub distill{
                 $parents->[ $parent_ix ]->append_child(
                     $class->new(
                         $ast->is_literal() ?
-                            $opts->{literals_as_text} ?
+                            $opts->{bare_literals} ?
                                 [ $children[0], @$ast[1..$CHILDREN_START-1] ]
                                 : $ast
                             : [ $node_id, @$ast[1..$CHILDREN_START-1] ]

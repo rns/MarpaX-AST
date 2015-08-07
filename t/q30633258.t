@@ -70,11 +70,13 @@ my $expected_distilled = <<EOS;
      string 'This is some description'
 EOS
 
-my $dast = $ast->distill({
+$ast = $ast->distill({
     root => 'root',
-    skip => [ 'start', 'values', 'value', 'subseries' ],
+    skip => [ qw{ start values value subseries } ],
 # todo: explain dont_visit vs. skip
-    dont_visit => [ 'series' ],
+    dont_visit => [ qw{ series } ],
+#    bare_literals => 1 # as in "make specified literals bare literals"
+#    bare_literals => [ name, string ] # bare
 });
 
 
@@ -91,10 +93,10 @@ my $dast = $ast->distill({
 
 =cut
 
-#say MarpaX::AST::dumper($dast);
-say $dast->sprint;
+#say MarpaX::AST::dumper($ast);
+say $ast->sprint;
 
-my $got_distilled = $dast->sprint;
+my $got_distilled = $ast->sprint;
 
 is $got_distilled, $expected_distilled, "complex-string-splitting, SO Question 30633258";
 
