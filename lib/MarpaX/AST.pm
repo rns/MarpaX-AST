@@ -119,6 +119,17 @@ sub first_child{
     return $ast->child(0, $child);
 }
 
+# shortcut for ->first_child->first_child
+sub first_grandchild{
+    my ($ast) = @_;
+    return $ast->child(0)->child(0);
+}
+
+sub second_child{
+    my ($ast, $child) = @_;
+    return $ast->child(1, $child);
+}
+
 # set last child if the caller provides it,
 # return the last child that matches $predicate if arg 1 is a code ref
 sub last_child{
