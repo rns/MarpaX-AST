@@ -380,7 +380,7 @@ sub distill{
                 }
                 # append all literals as parents
                 elsif ($opts->{append_literals_as_parents}){
-                    warn "as parent: $node_id";
+#                    warn "as parent: $node_id";
                     $child_to_append = [ $children[0], @$ast[1..$CHILDREN_START-1] ]
                 }
                 # append all literals as children
@@ -550,6 +550,7 @@ sub export{
             return $key->text => $value->export();
         }
         elsif (exists $schema->{array}->{$node_id}){
+#            warn "array: ", $ast->sprint;
             my $items = [];
             map {
                 my $item = ref($_) ? $_->export() : $_;
@@ -563,7 +564,9 @@ sub export{
             return $items;
         }
         elsif (exists $schema->{array_item}->{$node_id}){
+#            warn "array item: ", $ast->sprint;
             if (@$children == 2){
+#                warn "indexed array item";
                 my ($index, $value) = @$children;
                 return [ $index->text, $value->export() ];
             }
