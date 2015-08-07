@@ -11,6 +11,7 @@ use Scalar::Util qw{ blessed };
 # by default, children start at 1 in @$ast
 # todo: make this an instance variable
 my $CHILDREN_START = 1;
+my $root;
 
 =pod head2
     CHILDREN_START allows putting data between the node id and node values,
@@ -33,7 +34,7 @@ sub new {
         }
     }
 #    warn $CHILDREN_START;
-
+    $root = $ast;
     return MarpaX::AST::bless( $ast, $class );
 }
 
