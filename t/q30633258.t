@@ -52,22 +52,18 @@ $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 
 my $expected_distilled = <<EOS;
  root
-   name 'Testing.User'
-   subname
-     #text 'Info'
-     name 'Testing.Info'
-     subname
-       #text 'Name'
-       name 'System.String'
-       string 'Matt'
-     subname
-       #text 'Age'
-       name 'System.Int32'
-       string '21'
-   subname
-     #text 'Description'
-     name 'System.String'
-     string 'This is some description'
+   Testing.User
+   Info
+     Testing.Info
+     Name
+       System.String
+       Matt
+     Age
+       System.Int32
+       21
+   Description
+     System.String
+     This is some description
 EOS
 
 $ast = $ast->distill({
@@ -75,23 +71,10 @@ $ast = $ast->distill({
     skip => [ qw{ start values value subseries } ],
 # todo: explain dont_visit vs. skip
     dont_visit => [ qw{ series } ],
-#    bare_literals => 1 # as in "make specified literals bare literals"
+    bare_literals => 1 # as in "make specified literals bare literals"
 #    bare_literals => [ name, string ] # bare
 });
 
-
-# todo: make a data structure and test with is_deeply
-=pod DSL to convert AST to a data structure
-
- node_id/node_id => hash/pair
-
- node_id => array/item
-
- node_id => pass-through
-
- ... all unspecified node ID’s => pass-through
-
-=cut
 
 #say MarpaX::AST::dumper($ast);
 say $ast->sprint;
