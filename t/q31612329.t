@@ -97,55 +97,80 @@ $ast = $ast->distill({
 
 #say $ast->sprint;
 
-sub make_hash_map{
-    my ($ast) = @_;
+sub ast_validate{
+    my ($ast, $schema) = @_;
+    # $ast must have all nodes in schema
+    # every child of a hash node must validate as hash_item
+    # every child of an array node must validate as array_item
+    # hash_item node must have exactly two children, the first of which must be a literal
+    # array_item node must have exactly two children, the first of which must be a literal
+    # or a single child
+    # todo: undefs?
+    return 1;
+}
+
+use Carp::Assert;
+use Carp::Always;
+
+sub internalize{
+    my ($external_schema) = @_;
+    # convert array refs to hashes for node id lookup
+    while (my ($k, $v) = each %$external_schema){
+        my $v_href = {};
+        $v_href->{$_} = 1 for @$v;
+        $external_schema->{$k} = $v_href;
+    }
+    return $external_schema;
+}
+
+sub ast_export{
+    my ($ast, $external_schema) = @_;
+
+    state $schema = internalize($external_schema);
 
     if ($ast->is_literal){ return $ast->text }
     else{
-        my $id = $ast->id;
+        my $node_id = $ast->id;
         my $children = $ast->children;
-        # root -- just pass through
-        if ($id eq 'scutil'){
-            return make_hash_map(@$children);
+        if (exists $schema->{hash}->{$node_id}){
+            return { map { ast_export($_, $schema) } @$children };
         }
-        # hash
-        elsif ($id eq 'dict' or $id eq 'signature'){
-            return { map { make_hash_map($_) } @$children };
+        elsif (exists $schema->{hash_item}->{$node_id}){
+            my ($key, $value) = @$children;
+            return $key->text => ast_export($value, $schema);
         }
-        # hash item
-        elsif ($id eq 'pair' or $id eq 'signature_item'){
-            my ($k, $v) = @{ $ast->children() };
-            return $k->text => make_hash_map($v);
-        }
-        # array
-        elsif ($id eq 'array'){
-            # todo: item nodes not sorted by index
-            # by checking of the returned array item is [ $ix, $value ] or $value
-            my $array = [];
+        elsif (exists $schema->{array}->{$node_id}){
+            my $items = [];
             map {
-                my $item = make_hash_map($_);
-#                warn $item->[0];
-                $array->[ $item->[0] ] = $item->[1];
-                } @$children;
-            return $array;
+                my $item = ast_export($_, $schema);
+                # todo: validate $ast according to $schema
+                # assuming pre-validation
+                # array item is indexed [ $index, $value ]
+                if (ref $item) { $items->[ $item->[0] ] = $item->[1] }
+                # array item is bare (scalar)
+                else { push @$items, $item }
+            } @$children;
+            return $items;
         }
-        # array item
-        elsif ($id eq 'item'){
-            my $index = $ast->first_grandchild;
-            my $value = $ast->second_child;
-            # index, value
-            return [ $index, make_hash_map($value) ];
+        elsif (exists $schema->{array_item}->{$node_id}){
+#            return [ map { ast_export($_, $schema), @$children ];
+            if (@$children == 2){
+                my ($index, $value) = @$children;
+                return [ $index->text, ast_export($value, $schema) ];
+            }
+            elsif(@$children == 1){
+                return ast_export($children->[0], $schema);
+            }
         }
-        # pass through
-        else {
-            return make_hash_map($_) for @$children;
-        }
+        else{ return ast_export($_, $schema) for @$children }
     }
 }
 
-my $got_hash_map = make_hash_map($ast);
+my $exported = ast_export($ast, {
+    hash => [ 'dict', 'signature' ], hash_item => [ qw{ pair signature_item } ],
+    array => [ qw{ array } ], array_item => [ qw{ item } ] } );
 
-#warn "got_hash_map: ", MarpaX::AST::dumper( $got_hash_map );
+#warn "exported:", MarpaX::AST::dumper( $exported );
 
 # todo: notify the asker ?
 
@@ -177,6 +202,6 @@ my $expected_hash_map = {
   ]
 };
 
-is_deeply $expected_hash_map, $got_hash_map, "SO question 31612329";
+is_deeply $exported, $expected_hash_map, "SO question 31612329";
 
 done_testing();
