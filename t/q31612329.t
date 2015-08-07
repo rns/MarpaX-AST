@@ -132,6 +132,6 @@ my $expected_hash_map = {
   ]
 };
 
-is_deeply $exported, $expected_hash_map, "SO question 31612329";
+is_deeply $exported, $expected_hash_map, "SO question 31612329: export";
 
 done_testing();
