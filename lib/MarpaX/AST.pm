@@ -552,7 +552,7 @@ sub export{
         elsif (exists $schema->{array}->{$node_id}){
             my $items = [];
             map {
-                my $item = $_->export();
+                my $item = ref($_) ? $_->export() : $_;
                 # todo: validate $ast according to $schema
                 # assuming pre-validation
                 # array item is indexed [ $index, $value ]
