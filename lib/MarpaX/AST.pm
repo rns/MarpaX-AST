@@ -267,8 +267,8 @@ sub do_walk{
         my $node = [ '#text' ];
         if ($CHILDREN_START > 1){
             push @$node, undef for 1..$CHILDREN_START-1;
-            carp $CHILDREN_START - 1, " undef's are inserted between node id and first child at $CHILDREN_START";
-            warn dumper($ast);
+#            carp $CHILDREN_START - 1, " undef's are inserted between node id and first child at $CHILDREN_START";
+#            warn dumper($ast);
         }
         push @$node, $ast;
         $ast = CORE::bless $node, __PACKAGE__ ;
