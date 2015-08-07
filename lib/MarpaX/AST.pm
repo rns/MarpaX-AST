@@ -338,6 +338,7 @@ sub distill{
     my $root = $class->new( [ $opts->{root}, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
+    # append_literals_as_parents requires code commented # convert childless nodes to bare literals below
     $opts->{append_literals_as_parents} //= 0;
     if (ref $opts->{append_literals_as_parents} eq "ARRAY"){
         $opts->{append_literals_as_parents} = { map { $_ => 1 } @{ $opts->{append_literals_as_parents} } }
@@ -396,6 +397,29 @@ sub distill{
                     $class->new( $child_to_append ) );
         }
     } );
+
+    # convert childless nodes to bare literals
+    if ($opts->{append_literals_as_parents}){
+        $root->walk({ visit => sub {
+            my ($ast, $ctx) = @_;
+            return if $ast->is_literal;
+            my @children = @{ $ast->children };
+            for my $ix (0..@children){
+                my $child = $children[$ix];
+                next unless defined $child;
+                unless (@{ $child->children }){
+#                    warn "childless child: ", $child->id, " of parent ", $ast->id;
+                    # set childless node as bare literal
+                    my $bare_literal = [ '#text' ];
+                    push @$bare_literal, $child->[$_] for 1..$CHILDREN_START-1;
+                    push @$bare_literal, $child->id;
+                    $ast->[$CHILDREN_START + $ix] = __PACKAGE__->new($bare_literal);
+#                    warn $ast->sprint;
+                }
+            }
+        } });
+    }
+
     return $root;
 }
 
