@@ -275,6 +275,7 @@ sub do_walk{
     $opts->{depth}++ unless $skip;
 
     unless ($opts->{depth} > $opts->{max_depth} or $skip) {
+        # todo: set parent and siblings in $context
         $opts->{visit}->( $ast, $context );
     }
 
@@ -284,8 +285,6 @@ sub do_walk{
     # and childless nodes
     if ( not $ast->is_literal and @children ){
         # set siblings and parents for context and walk on
-        $context->{parent}   = $ast;
-        $context->{siblings} = \@children;
         do_walk( $_, $opts  ) for @children;
     }
 
