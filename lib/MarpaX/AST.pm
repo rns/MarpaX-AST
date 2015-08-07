@@ -330,7 +330,10 @@ sub distill{
     my $root = $class->new( [ $opts->{root}, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
-    $opts->{bare_literals} //= 0;
+    $opts->{append_literals_as_parents} //= 0;
+    if (ref $opts->{append_literals_as_parents} eq "ARRAY"){
+        $opts->{append_literals_as_parents} = { map { $_ => 1 } @{ $opts->{append_literals_as_parents} } }
+    };
 
     $ast->walk( {
         skip =>
@@ -353,21 +356,24 @@ sub distill{
 
             my $parent_ix = $ctx->{depth} - $dont_visit_ix;
 
+            my $child_to_append;
+            if ($ast->is_literal()){
+                if ($opts->{append_literals_as_parents}){
+                    $child_to_append = [ $children[0], @$ast[1..$CHILDREN_START-1] ]
+                }
+                else{
+                    $child_to_append = $ast;
+                }
+            }
+            else{
+                $child_to_append = [ $node_id, @$ast[1..$CHILDREN_START-1] ]
+            }
+
             $parents->[ $parent_ix + 1 ] =
                 $parents->[ $parent_ix ]->append_child(
-                    $class->new(
-                        $ast->is_literal() ?
-                            $opts->{append_literals_as_parents} ?
-                                # literal becomes parent
-                                [ $children[0], @$ast[1..$CHILDREN_START-1] ]
-                                # literal remains child
-                                : $ast
-                            : [ $node_id, @$ast[1..$CHILDREN_START-1] ]
-                    )
-                );
+                    $class->new( $child_to_append ) );
         }
     } );
-
     return $root;
 }
 
