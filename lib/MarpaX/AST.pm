@@ -357,6 +357,7 @@ sub distill{
             state $dont_visit = { map { $_ => 1 } @{ $opts->{dont_visit} } };
             state $dont_visit_ix = keys %$dont_visit;
 
+            # todo: document or remove print_node
             $opts->{print_node}->($ast, $ctx) if exists $opts->{print_node};
 
             return if exists $dont_visit->{ $node_id };
