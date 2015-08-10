@@ -81,41 +81,49 @@ $ast = $ast->distill({
 # name, [ children ]
 
 #warn MarpaX::AST::dumper($ast);
-warn $ast->sprint;
+#warn $ast->sprint;
 
 my $got_distilled = $ast->sprint;
 
 is $got_distilled, $expected_distilled, "SO Question 30633258: distill";
 
-my $exported = $ast->export(
-    { array => [ 'root', 'Info', 'Name', 'Age', 'Description' ]
-# { named_array => [ 'Info', 'Name', 'Age', 'Description' ] }
-#    { array => [ 'root', 'name', 'subname', '#text', 'subseries' ]
+my $exported = $ast->export( {
+    array => [qw{ root }],
+    named_array => [qw{ Info Name Age Description }]
 });
 
-warn MarpaX::AST::dumper($exported);
+#warn MarpaX::AST::dumper($exported);
 
+# [ name, [ children ] ] tree based on http://stackoverflow.com/a/30633769/4007818
 my $expected_exported = eval q{
 [
-  "Testing.User",
+  "[Testing.User]",
   [
     "Info",
-    "Testing.Info",
     [
-      "Name",
-      "System.String",
-      "Matt"
-    ],
-    [
-      "Age",
-      "System.Int32",
-      21
+      "[Testing.Info]",
+      [
+        "Name",
+        [
+          "[System.String]",
+          "Matt"
+        ]
+      ],
+      [
+        "Age",
+        [
+          "[System.Int32]",
+          21
+        ]
+      ]
     ]
   ],
   [
     "Description",
-    "System.String",
-    "This is some description"
+    [
+      "[System.String]",
+      "This is some description"
+    ]
   ]
 ]
 };

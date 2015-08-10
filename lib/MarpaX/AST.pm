@@ -510,7 +510,7 @@ sub roundtrip{
 sub validate{
     my ($ast, $external_schema) = @_;
     state $schema = internalize($external_schema);
-    # $ast must have all nodes in schema
+    # validate() must warn about non-literal $ast nodes missing from $schema
     # every child of a hash node must validate as hash_item
     # every child of an array node must validate as array_item
     # hash_item node must have exactly two children, the first of which must be a literal
@@ -566,6 +566,10 @@ sub export{
                 }
             } @$children;
             return $items;
+        }
+        elsif (exists $schema->{named_array}->{$node_id}){
+            $schema->{array}->{$node_id} = 1;
+            return [ $ast->id, [ map { $_->export() } @$children ] ];
         }
         elsif (exists $schema->{array_item}->{$node_id}){
 #            warn "array item: ", $ast->sprint;
