@@ -532,30 +532,36 @@ sub internalize{
         $v_href->{$_} = 1 for @$v;
         $external_schema->{$k} = $v_href;
     }
+#    warn "# internal schema:\n", dumper($external_schema);
     return $external_schema;
 }
 
 sub export{
     my ($ast, $external_schema) = @_;
+    return $ast->do_export(internalize($external_schema));
+}
 
-    state $schema = internalize($external_schema);
+sub do_export{
+    my ($ast, $schema) = @_;
 
     if ($ast->is_literal){ return $ast->text }
     else{
         my $node_id = $ast->id;
         my $children = $ast->children;
         if (exists $schema->{hash}->{$node_id}){
-            return { map { $_->export() } @$children };
+            warn "hash: ", $ast->id;
+            return { map { $_->do_export($schema) } @$children };
         }
         elsif (exists $schema->{hash_item}->{$node_id}){
+            warn "hash item: ", $ast->id;
             my ($key, $value) = @$children;
-            return $key->text => $value->export();
+            return $key->text => $value->do_export($schema);
         }
         elsif (exists $schema->{array}->{$node_id}){
 #            warn "array: ", $ast->sprint;
             my $items = [];
             map {
-                my $item = ref($_) ? $_->export() : $_;
+                my $item = ref($_) ? $_->do_export($schema) : $_;
                 # todo: validate $ast according to $schema
                 # assuming pre-validation
                 # array item is indexed [ $index, $value ]
@@ -573,20 +579,20 @@ sub export{
         }
         elsif (exists $schema->{named_array}->{$node_id}){
             $schema->{array}->{$node_id} = 1;
-            return [ $ast->id, [ map { $_->export() } @$children ] ];
+            return [ $ast->id, [ map { $_->do_export($schema) } @$children ] ];
         }
         elsif (exists $schema->{array_item}->{$node_id}){
 #            warn "array item: ", $ast->sprint;
             if (@$children == 2){
 #                warn "indexed array item";
                 my ($index, $value) = @$children;
-                return { index => $index->text, value => $value->export() };
+                return { index => $index->text, value => $value->do_export($schema) };
             }
             elsif(@$children == 1){
-                return $children->[0]->export();
+                return $children->[0]->do_export($schema);
             }
         }
-        else{ return $_->export() for @$children }
+        else{ return $_->do_export($schema) for @$children }
     }
 }
 
