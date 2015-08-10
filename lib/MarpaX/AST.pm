@@ -549,11 +549,11 @@ sub do_export{
         my $node_id = $ast->id;
         my $children = $ast->children;
         if (exists $schema->{hash}->{$node_id}){
-            warn "hash: ", $ast->id;
+#            warn "hash: ", $ast->id;
             return { map { $_->do_export($schema) } @$children };
         }
         elsif (exists $schema->{hash_item}->{$node_id}){
-            warn "hash item: ", $ast->id;
+#            warn "hash item: ", $ast->id;
             my ($key, $value) = @$children;
             return $key->text => $value->do_export($schema);
         }
