@@ -855,9 +855,7 @@ sub parse {
 } ## end sub parse
 
 sub decode {
-    my $parser = shift;
-
-    my $ast  = shift;
+    my ($parser, $ast) = @_;
 
     if (ref $ast){
         my ($id, $start, $length, @nodes) = @$ast;

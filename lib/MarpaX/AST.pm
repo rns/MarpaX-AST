@@ -510,7 +510,7 @@ sub roundtrip{
 }
 
 # returns for debugging if smth. goes wrong
-# todo: ast_validate()
+# todo: $ast->validate()
 sub validate{
     my ($ast, $external_schema) = @_;
     state $schema = internalize($external_schema);
@@ -520,7 +520,7 @@ sub validate{
     # hash_item node must have exactly two children, the first of which must be a literal
     # array_item node must have exactly two children, the first of which must be a literal
     # or a single child
-    # todo: undefs?
+    # undefs?
     return 1;
 }
 
