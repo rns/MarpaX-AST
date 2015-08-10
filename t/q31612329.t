@@ -89,7 +89,6 @@ $ast = MarpaX::AST->new( $$ast );
 #say MarpaX::AST::dumper($ast);
 
 $ast = $ast->distill({
-    root => '',
     skip => [ 'path', '#text', 'value', 'items', 'pairs', 'signature_item_value' ],
 });
 

@@ -11,7 +11,6 @@ use Scalar::Util qw{ blessed };
 # by default, children start at 1 in @$ast
 # todo: make this an instance variable
 my $CHILDREN_START = 1;
-my $root;
 
 =pod head2
     CHILDREN_START allows putting data between the node id and node values,
@@ -34,7 +33,6 @@ sub new {
         }
     }
 #    warn $CHILDREN_START;
-    $root = $ast;
     return MarpaX::AST::bless( $ast, $class );
 }
 
@@ -335,7 +333,7 @@ sub distill{
 
     my $class = ref $ast;
 
-    my $root = $class->new( [ $opts->{root}, @$ast[1..$CHILDREN_START-1] ] );
+    my $root = $class->new( [ $opts->{root} //= $ast->id, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
     # append_literals_as_parents requires code commented # convert childless nodes to bare literals below
