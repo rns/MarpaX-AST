@@ -50,6 +50,9 @@ $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 #warn MarpaX::AST::dumper($ast);
 #warn $ast->sprint;
 
+#
+# distill
+#
 my $expected_distilled = <<EOS;
  root
    #text '[Testing.User]'
@@ -66,33 +69,27 @@ my $expected_distilled = <<EOS;
      #text 'This is some description'
 EOS
 
-$ast = $ast->distill({
-    root => 'root',
-    skip => [ qw{ start values value subseries } ],
-# todo: explain dont_visit vs. skip
-    dont_visit => [ qw{ series } ],
-    append_literals_as_parents => 1 # applies to all literals
-# todo: test append_literals_as_parents => 1
-#    append_literals_as_parents => [ qw{ name subname string } ]
-});
+my $raw_ast = $ast;
 
-# name, [ children ]
+# test distill with full and selective append_literals_as_parents
+for my $append_literals_as_parents (1, [ qw{ name subname string } ]){
+    $ast = $raw_ast->distill({
+        root => 'root',
+        skip => [ qw{ start values value subseries } ],
+        # todo: explain dont_visit vs. skip
+        dont_visit => [ qw{ series } ],
+        append_literals_as_parents => $append_literals_as_parents
+    });
+    my $got_distilled = $ast->sprint;
+    is $got_distilled, $expected_distilled, "SO Question 30633258: distill";
+}
 
 #warn MarpaX::AST::dumper($ast);
 #warn $ast->sprint;
 
-my $got_distilled = $ast->sprint;
-
-is $got_distilled, $expected_distilled, "SO Question 30633258: distill";
-
-my $exported = $ast->export( {
-    array => [qw{ root }],
-    named_array => [qw{ Info Name Age Description }]
-});
-
-#warn MarpaX::AST::dumper($exported);
-
-# [ name, [ children ] ] tree based on http://stackoverflow.com/a/30633769/4007818
+#
+# export as [ name, [ children ] ] tree based on http://stackoverflow.com/a/30633769/4007818
+#
 my $expected_exported = eval q{
 [
   "[Testing.User]",
@@ -125,6 +122,13 @@ my $expected_exported = eval q{
   ]
 ]
 };
+
+my $exported = $ast->export( {
+    array => [qw{ root }],
+    named_array => [qw{ Info Name Age Description }]
+});
+
+#warn MarpaX::AST::dumper($exported);
 
 is_deeply $exported, $expected_exported, "SO Question 30633258: export";
 
