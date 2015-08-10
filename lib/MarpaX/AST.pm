@@ -391,9 +391,12 @@ sub distill{
                 $child_to_append = [ $node_id, @$ast[1..$CHILDREN_START-1] ]
             }
 
+            return unless defined $parents->[ $parent_ix ];
+
             $parents->[ $parent_ix + 1 ] =
                 $parents->[ $parent_ix ]->append_child(
                     $class->new( $child_to_append ) );
+
         }
     } );
 

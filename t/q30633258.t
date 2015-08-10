@@ -68,10 +68,8 @@ EOS
 
 $ast = $ast->distill({
     root => 'root',
-# todo: fails with value and/or subname and qw{start values} in skip =>
     skip => [ qw{ start values value subseries } ],
 # todo: explain dont_visit vs. skip
-# todo: fails with subname
     dont_visit => [ qw{ series } ],
     append_literals_as_parents => 1 # applies to all literals
 # todo: test append_literals_as_parents => 1
