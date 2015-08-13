@@ -37,7 +37,7 @@ sub slurp_file{
     return $slurp;
 }
 
-#my $lua_parser_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
+#my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
 #my @lua_files = qw{ echo.lua };
 
 my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
@@ -57,7 +57,7 @@ for my $lua_file (@lua_files){
 
     $ast = MarpaX::AST->new( $ast, { CHILDREN_START => 3 } );
 
-    # test for is_nulled() in constructs.lua
+    # is_nulled() in constructs.lua
     if ($lua_file =~ m/constructs.lua$/){
         my $nulled = [];
         my $expected_nulled = [
@@ -67,7 +67,7 @@ for my $lua_file (@lua_files){
           [ "block", 867, 0, undef ],
         ];
         $ast->walk({ visit => sub { push @$nulled, $_[0] if $_[0]->is_nulled() } });
-        is_deeply $nulled, $expected_nulled, "nulled nodes";
+        is_deeply $nulled, $expected_nulled, "$lua_file: nulled nodes";
     }
 
 #    warn MarpaX::AST::dumper($ast);
@@ -77,9 +77,10 @@ for my $lua_file (@lua_files){
         skip => [ 'statements', 'chunk' ],
     });
 
-#        warn $ast->sprint;
+#    warn $ast->sprint;
 
-    eq_or_diff $ast->roundtrip($discardables), $lua_src, qq{$lua_dir/$lua_file};
+    eq_or_diff $ast->roundtrip($discardables), $lua_src,
+        qq{$lua_dir/$lua_file roundtripped};
 }
 
 done_testing();
