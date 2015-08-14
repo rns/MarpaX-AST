@@ -18,6 +18,7 @@ use Test::More;
 use Marpa::R2;
 
 use_ok 'MarpaX::AST';
+use_ok 'MarpaX::AST::Discardables';
 
 my $p = MarpaX::JSON->new;
 
