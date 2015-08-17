@@ -42,9 +42,6 @@ my $input = '4+5*6+8';
 
 my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
 
-my $result;
-my $op;
-
 $ast->walk({
     visit => sub {
         my ($ast, $context) = @_;
@@ -53,6 +50,7 @@ $ast->walk({
     }
 });
 
+# evaluate ast as array of arrays with 0th element being the node id
 sub ast_eval_AoA{
     my ($ast) = @_;
     if (@$ast == 4){
@@ -68,6 +66,9 @@ sub ast_eval_AoA{
     }
 }
 
+is ast_eval_AoA($ast), eval $input, "$input, ast_eval_AoA()";
+
+# evaluate ast using MarpaX::AST methods
 sub ast_eval{
     my ($ast) = @_;
     if ($ast->id eq 'Expr' and $ast->first_child->id eq 'Number'){
@@ -83,7 +84,86 @@ sub ast_eval{
     }
 }
 
-is ast_eval_AoA($ast), eval $input, "$input, ast_eval_AoA()";
 is ast_eval($ast), eval $input, "$input, ast_eval()";
+
+# evaluate ast using Visitor pattern ($v is for visitor)
+package My::Visitor;
+
+use parent 'MarpaX::AST::Visitor';
+
+sub visit_num{
+    my ($v, $ast) = @_;
+    $ast->first_child->text
+}
+
+sub visit_add{
+    my ($v, $ast) = @_;
+    $v->visit( $ast->first_child ) + $v->visit( $ast->last_child )
+}
+
+sub visit_sub{
+    my ($v, $ast) = @_;
+    $v->visit( $ast->first_child ) - $v->visit( $ast->last_child )
+}
+
+sub visit_mul{
+    my ($v, $ast) = @_;
+    $v->visit( $ast->first_child ) * $v->visit( $ast->last_child )
+}
+
+sub visit_div{
+    my ($v, $ast) = @_;
+    $v->visit( $ast->first_child ) / $v->visit( $ast->last_child )
+}
+
+sub visit_pow{
+    my ($v, $ast) = @_;
+    $v->visit( $ast->first_child ) ** $v->visit( $ast->last_child )
+}
+
+sub visit_parens{
+    my ($v, $ast) = @_;
+    $v->visit( $ast->first_child )
+}
+
+sub visit_Number{
+    my ($self, $ast) = @_;
+    warn "Visit Number: ", $ast->sprint;
+}
+
+package main;
+
+$g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
+
+:default ::= action => [ name, value ]
+lexeme default = action => [ name, value ] latm => 1
+
+    # as we dispatch based on node id -- methods are defined as visit_$node_id()
+    # we need to add name's, but may omit all literals
+    Expr ::=
+          Number                              name => 'num'
+        | ('(') Expr (')')  assoc => group    name => 'parens'
+       || Expr ('**') Expr    assoc => right  name => 'pow'
+       || Expr ('*') Expr                     name => 'mul'
+        | Expr ('/') Expr                     name => 'div'
+       || Expr ('+') Expr                     name => 'add'
+        | Expr ('-') Expr                     name => 'sub'
+
+    Number ~ [\d]+
+
+:discard ~ whitespace
+whitespace ~ [\s]+
+
+END_OF_SOURCE
+} );
+
+my @inputs = qw{ 4+5*6+8 (4+5)*(6+8) (4+5)*(6+8)**12/5 };
+
+for my $inp (@inputs){
+    $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
+#    warn $ast->sprint;
+    my $v = My::Visitor->new();
+    is $v->visit($ast), eval $inp, "$inp, Visitor pattern";
+}
 
 done_testing();
