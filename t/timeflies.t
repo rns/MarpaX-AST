@@ -108,13 +108,15 @@ sub ast_bracket{
     state $level = 0;
     my $tag    = $ast->id;
     my $result = exists $structural->{$tag} ? ("\n" . ("  " x $level)) : '';
+    $result .= '(';
     $level++;
     if ($ast->is_literal){
-        $result .= $tag eq 'period' ? '(. .)' : '(' . $tag . ' ' . $ast->text . ')';
+        $result .= $tag eq 'period' ? '. .' : $tag . ' ' . $ast->text;
     }
     else{
-        $result .= '(' . $tag . join(' ', map { ast_bracket($_) } @{ $ast->children() } ) . ')';
+        $result .= $tag . join(' ', map { ast_bracket($_) } @{ $ast->children() } );
     }
+    $result .= ')';
     $level--;
     return $result;
 }
