@@ -15,18 +15,22 @@ use Carp::Always;
 use_ok 'MarpaX::AST';
 
 my $parser_module_dir;
+my $cwd;
 BEGIN{
     # set dit for lua source files
     $parser_module_dir = '../MarpaX-Languages-Lua-AST';
-    $parser_module_dir = qq{../$parser_module_dir}
-        unless $ENV{HARNESS_ACTIVE};
+    $cwd = qq{./t};
+    unless ( $ENV{HARNESS_ACTIVE} ){
+        $parser_module_dir = qq{../$parser_module_dir};
+        $cwd = q{./};
+    }
     # silence "Deep recursion on" warning
     $SIG{'__WARN__'} = sub {
         warn $_[0] unless $_[0] =~ /Deep recursion|Redundant argument in sprintf/ }
 }
 
+# todo: loosen the dep on Lua::AST
 use lib qq{$parser_module_dir/lib};
-
 use_ok 'MarpaX::Languages::Lua::AST';
 
 sub slurp_file{
@@ -37,18 +41,15 @@ sub slurp_file{
     return $slurp;
 }
 
-#my $lua_dir = qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser};
-#my @lua_files = qw{ echo.lua };
-
-my $lua_dir = qq{$parser_module_dir/t/lua5.1-tests};
-my @lua_files = qw{ constructs.lua };
-
-#my $lua_dir = $ENV{HARNESS_ACTIVE} ?  't' : '.';
-#my @lua_files = qw{ corner_cases.lua };
+my @lua_files = (
+    qq{$parser_module_dir/t/MarpaX-Languages-Lua-Parser/echo.lua},
+    qq{$parser_module_dir/t/lua5.1-tests/constructs.lua},
+    qq{$cwd/corner_cases.lua }
+);
 
 for my $lua_file (@lua_files){
 
-    my $lua_src = slurp_file( qq{$lua_dir/$lua_file} );
+    my $lua_src = slurp_file($lua_file);
     my $p = MarpaX::Languages::Lua::AST->new;
 
     my $ast = $p->parse( $lua_src );
@@ -80,7 +81,7 @@ for my $lua_file (@lua_files){
 #    warn $ast->sprint;
 
     eq_or_diff $ast->roundtrip($discardables), $lua_src,
-        qq{$lua_dir/$lua_file roundtripped};
+        qq{$lua_file roundtripped};
 }
 
 done_testing();
