@@ -105,20 +105,17 @@ sub ast_bracket{
 #    warn $ast->sprint;
     state $structural = { map { $_ => undef } qw{ NP VP PP period } };
     state $level = 0;
-    my $tag   = $ast->id;
-    my $head  = exists $structural->{$tag} ? ("\n" . ("  " x $level)) : '';
+    my $tag    = $ast->id;
+    my $result = exists $structural->{$tag} ? ("\n" . ("  " x $level)) : '';
+    $level++;
     if ($ast->is_literal){
-        $level++;
-        my $result = $head . ( $tag eq 'period' ? '(. .)' : '(' . $tag . ' ' . $ast->text . ')' );
-        $level--;
-        return $result;
+        $result .= $tag eq 'period' ? '(. .)' : '(' . $tag . ' ' . $ast->text . ')';
     }
     else{
-        $level++;
-        my $result = $head . ( '(' . $tag . join(' ', map { ast_bracket($_) } @{ $ast->children() } ) . ')' );
-        $level--;
-        return $result;
+        $result .= '(' . $tag . join(' ', map { ast_bracket($_) } @{ $ast->children() } ) . ')';
     }
+    $level--;
+    return $result;
 }
 
 my $got = join ( "\n", @actual ) . "\n";
