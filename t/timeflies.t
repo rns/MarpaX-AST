@@ -87,18 +87,19 @@ END_OF_PARAGRAPH
 # structural tags -- need a newline
 my %s_tags = map { $_ => undef } qw{ NP VP PP period };
 
-my @actual = ();
+my @values = ();
 for my $sentence (split /\n/, $paragraph){
 
     my $recce = Marpa::R2::Scanless::R->new( { grammar => $grammar  } );
     $recce->read( \$sentence );
 
     while ( defined( my $value_ref = $recce->value() ) ) {
-        my $value = $value_ref ?
-            ast_bracket ( MarpaX::AST->new( ${$value_ref} ) ) : 'No parse';
-        push @actual, $value;
+        my $value = $value_ref ? ${$value_ref} : 'No parse';
+        push @values, $value;
     }
 }
+
+my @actual = map { ast_bracket ( MarpaX::AST->new( $_ ) ) } @values;
 
 sub ast_bracket{
     my ($ast, $ctx) = @_;
