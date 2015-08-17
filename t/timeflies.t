@@ -2,7 +2,7 @@
 
 # Copyright 2015 Ruslan Shvedov
 
-# json decoding
+# ambiguous English phrases
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_timelies.t
 
 use 5.010;
@@ -13,6 +13,8 @@ use Test::More;
 use Test::Differences;
 
 use Marpa::R2;
+
+use_ok 'MarpaX::AST';
 
 my $grammar = Marpa::R2::Scanless::G->new(
     {   source => \(<<'END_OF_SOURCE'),
@@ -92,35 +94,31 @@ for my $sentence (split /\n/, $paragraph){
     $recce->read( \$sentence );
 
     while ( defined( my $value_ref = $recce->value() ) ) {
-        my $value = $value_ref ? bracket ( ${$value_ref} ) : 'No parse';
+        my $value = $value_ref ?
+            ast_bracket ( MarpaX::AST->new( ${$value_ref} ) ) : 'No parse';
         push @actual, $value;
     }
 }
 
-sub bracket   {
-
-    my ($tag, @contents) = @{ $_[0] };
-
-    state $level++;
-
-    my $bracketed =
-        exists $s_tags{$tag} ? ("\n" . ("  " x ($level-1))) : '';
-
-    $tag = '.' if $tag eq 'period';
-
-    if (ref $contents[0]){
-        $bracketed .=
-                "($tag"
-            .   join(' ', map { bracket($_) } @contents)
-            .   ")";
+sub ast_bracket{
+    my ($ast, $ctx) = @_;
+#    warn $ast->sprint;
+    state $structural = { map { $_ => undef } qw{ NP VP PP period } };
+    state $level = 0;
+    my $tag   = $ast->id;
+    my $head  = exists $structural->{$tag} ? ("\n" . ("  " x $level)) : '';
+    if ($ast->is_literal){
+        $level++;
+        my $result = $head . ( $tag eq 'period' ? '(. .)' : '(' . $tag . ' ' . $ast->text . ')' );
+        $level--;
+        return $result;
     }
-    else {
-        $bracketed .= "($tag $contents[0])";
+    else{
+        $level++;
+        my $result = $head . ( '(' . $tag . join(' ', map { ast_bracket($_) } @{ $ast->children() } ) . ')' );
+        $level--;
+        return $result;
     }
-
-    $level--;
-
-    return $bracketed;
 }
 
 my $got = join ( "\n", @actual ) . "\n";
