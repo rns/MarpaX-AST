@@ -126,11 +126,6 @@ sub visit_parens{
     $v->visit( $ast->first_child )
 }
 
-sub visit_Number{
-    my ($self, $ast) = @_;
-    warn "Visit Number: ", $ast->sprint;
-}
-
 package main;
 
 $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),

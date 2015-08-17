@@ -6,6 +6,7 @@ use 5.010;
 
 use Carp;
 
+# self can used as a scratchpad
 sub new { bless { }, $_[0] }
 
 sub visit{
