@@ -174,68 +174,43 @@ for my $inp (@inputs){
 #
 use_ok 'MarpaX::AST::Interpreter';
 
-package My::Interpreter::num;
+package My::Expr::num;
 use parent 'MarpaX::AST';
+sub evaluate { $_[0]->first_child->text }
 
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->text
-}
-
-package My::Interpreter::add;
+package My::Expr::add;
 use parent 'MarpaX::AST';
+sub evaluate { $_[0]->first_child->evaluate + $_[0]->last_child->evaluate }
 
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->evaluate + $ast->last_child->evaluate;
-}
-
-package My::Interpreter::sub;
+package My::Expr::sub;
 use parent 'MarpaX::AST';
+sub evaluate { $_[0]->first_child->evaluate - $_[0]->last_child->evaluate }
 
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->evaluate - $ast->last_child->evaluate;
-}
-
-package My::Interpreter::mul;
+package My::Expr::mul;
 use parent 'MarpaX::AST';
+sub evaluate { $_[0]->first_child->evaluate * $_[0]->last_child->evaluate }
 
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->evaluate * $ast->last_child->evaluate;
-}
-
-package My::Interpreter::div;
+package My::Expr::div;
 use parent 'MarpaX::AST';
+sub evaluate { $_[0]->first_child->evaluate / $_[0]->last_child->evaluate }
 
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->evaluate / $ast->last_child->evaluate;
-}
-
-package My::Interpreter::pow;
+package My::Expr::pow;
 use parent 'MarpaX::AST';
+sub evaluate { $_[0]->first_child->evaluate ** $_[0]->last_child->evaluate }
 
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->evaluate ** $ast->last_child->evaluate;
-}
-
-package My::Interpreter::parenthesized;
+package My::Expr::parenthesized;
 use parent 'MarpaX::AST';
-
-sub evaluate {
-    my ($ast) = @_;
-    $ast->first_child->evaluate;
-}
+sub evaluate { $_[0]->first_child->evaluate }
 
 package main;
 
 for my $inp (@inputs){
     $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
 #    warn $ast->sprint;
-    my $i = MarpaX::AST::Interpreter->new( $ast, { skip => [qw{ Number }] } );
+    my $i = MarpaX::AST::Interpreter->new( $ast, {
+        namespace => 'My::Expr',
+        skip => [qw{ Number }]
+    } );
 #    warn MarpaX::AST::dumper( $i->ast );
     is $ast->evaluate, eval $inp, "$inp, Interpreter pattern";
 }
