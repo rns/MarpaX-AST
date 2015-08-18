@@ -16,8 +16,7 @@ use Marpa::R2;
 
 use_ok 'MarpaX::AST';
 
-my $grammar = Marpa::R2::Scanless::G->new(
-    {   source => \(<<'END_OF_SOURCE'),
+my $grammar = Marpa::R2::Scanless::G->new({ source => \(<<'END_OF_SOURCE'),
 
 :default     ::= action => [ name, value ]
 lexeme default = action => [ name, value ]
@@ -51,8 +50,7 @@ NN  ~ 'time':i
 VBP ~ 'time':i
 
 END_OF_SOURCE
-    }
-);
+});
 
 my $expected = <<'EOS';
 (S
@@ -83,9 +81,6 @@ my $paragraph = <<END_OF_PARAGRAPH;
 Time flies like an arrow.
 Fruit flies like a banana.
 END_OF_PARAGRAPH
-
-# structural tags -- need a newline
-my %s_tags = map { $_ => undef } qw{ NP VP PP period };
 
 my @values = ();
 for my $sentence (split /\n/, $paragraph){
