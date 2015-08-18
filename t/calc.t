@@ -50,7 +50,9 @@ $ast->walk({
     }
 });
 
+#
 # evaluate ast as array of arrays with 0th element being the node id
+#
 sub ast_eval_AoA{
     my ($ast) = @_;
     if (@$ast == 4){
@@ -68,7 +70,9 @@ sub ast_eval_AoA{
 
 is ast_eval_AoA($ast), eval $input, "$input, ast_eval_AoA()";
 
+#
 # evaluate ast using MarpaX::AST methods
+#
 sub ast_eval{
     my ($ast) = @_;
     if ($ast->id eq 'Expr' and $ast->first_child->id eq 'Number'){
@@ -86,7 +90,9 @@ sub ast_eval{
 
 is ast_eval($ast), eval $input, "$input, ast_eval()";
 
+#
 # evaluate ast using Visitor pattern ($v is for visitor)
+#
 package My::Visitor;
 
 use parent 'MarpaX::AST::Visitor';
@@ -159,6 +165,77 @@ for my $inp (@inputs){
 #    warn $ast->sprint;
     my $v = My::Visitor->new();
     is $v->visit($ast), eval $inp, "$inp, Visitor pattern";
+}
+
+#
+# evaluate ast using Interpreter pattern ($i is for interperter)
+#
+use_ok 'MarpaX::AST::Interpreter';
+
+package My::Interpreter::num;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->text
+}
+
+package My::Interpreter::add;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate + $ast->last_child->evaluate;
+}
+
+package My::Interpreter::sub;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate - $ast->last_child->evaluate;
+}
+
+package My::Interpreter::mul;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate * $ast->last_child->evaluate;
+}
+
+package My::Interpreter::div;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate / $ast->last_child->evaluate;
+}
+
+package My::Interpreter::pow;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate ** $ast->last_child->evaluate;
+}
+
+package My::Interpreter::parens;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate;
+}
+
+package main;
+
+for my $inp (@inputs){
+    $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
+#    warn $ast->sprint;
+    my $i = MarpaX::AST::Interpreter->new( $ast, { skip => [qw{ Number }] } );
+    warn MarpaX::AST::dumper( $i->ast );
+    is $i->ast->evaluate, eval $inp, "$inp, Interpreter pattern";
 }
 
 done_testing();
