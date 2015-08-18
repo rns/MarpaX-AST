@@ -99,6 +99,9 @@ for my $sentence (split /\n/, $paragraph){
     }
 }
 
+#
+# recursion
+#
 my @actual = map { ast_bracket ( MarpaX::AST->new( $_ ) ) } @values;
 
 sub ast_bracket{
@@ -124,6 +127,44 @@ sub ast_bracket{
 my $got = join ( "\n", @actual ) . "\n";
 $got =~ s{\s+\n}{\n}gms;
 
-eq_or_diff( $got, $expected, 'Ambiguous English sentences' );
+eq_or_diff( $got, $expected, 'Ambiguous English sentences, recursion' );
+
+# Visitor
+package My::Visitor;
+
+use parent 'MarpaX::AST::Visitor';
+
+sub new{
+    my ($class) = @_;
+    return $class->SUPER::new( {
+        visit_structural => [qw{ S NP VP PP period }],
+        visit_literal => sub { $_[0]->is_literal }
+    } );
+}
+
+sub visit_structural{
+    my ($visitor, $ast, $context) = @_;
+    return "\n" . ("  " x $context->{level}) . '(. .)' if $ast->id eq 'period';
+    return ($ast->id eq 'S' ? '' : "\n") . ("  " x $context->{level}) .
+        '(' .
+        $ast->id . join(' ', map { $visitor->visit($_) } @{ $ast->children() } ) .
+        ')';
+}
+
+sub visit_literal{
+    my ($visitor, $ast) = @_;
+    return '(' . $ast->id . ' ' . $ast->text . ')';
+}
+
+package main;
+
+my $v = My::Visitor->new;
+
+@actual = map { my $ast = MarpaX::AST->new($_); $v->visit($ast) } @values;
+
+$got = join ( "\n", @actual ) . "\n";
+$got =~ s{\s+\n}{\n}gms;
+
+eq_or_diff( $got, $expected, 'Ambiguous English sentences, Visitor pattern' );
 
 done_testing();
