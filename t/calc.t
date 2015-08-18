@@ -93,6 +93,8 @@ is ast_eval($ast), eval $input, "$input, ast_eval()";
 #
 # evaluate ast using Visitor pattern ($v is for visitor)
 #
+use_ok 'MarpaX::AST::Visitor';
+
 package My::Visitor;
 
 use parent 'MarpaX::AST::Visitor';
@@ -127,7 +129,7 @@ sub visit_pow{
     $v->visit( $ast->first_child ) ** $v->visit( $ast->last_child )
 }
 
-sub visit_parens{
+sub visit_parenthesized{
     my ($v, $ast) = @_;
     $v->visit( $ast->first_child )
 }
@@ -143,8 +145,8 @@ lexeme default = action => [ name, value ] latm => 1
     # we need to add name's, but may omit all literals
     Expr ::=
           Number                              name => 'num'
-        | ('(') Expr (')')  assoc => group    name => 'parens'
-       || Expr ('**') Expr    assoc => right  name => 'pow'
+        | ('(') Expr (')')  assoc => group    name => 'parenthesized'
+       || Expr ('**') Expr  assoc => right    name => 'pow'
        || Expr ('*') Expr                     name => 'mul'
         | Expr ('/') Expr                     name => 'div'
        || Expr ('+') Expr                     name => 'add'
@@ -220,7 +222,7 @@ sub evaluate {
     $ast->first_child->evaluate ** $ast->last_child->evaluate;
 }
 
-package My::Interpreter::parens;
+package My::Interpreter::parenthesized;
 use parent 'MarpaX::AST';
 
 sub evaluate {
@@ -234,8 +236,8 @@ for my $inp (@inputs){
     $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
 #    warn $ast->sprint;
     my $i = MarpaX::AST::Interpreter->new( $ast, { skip => [qw{ Number }] } );
-    warn MarpaX::AST::dumper( $i->ast );
-    is $i->ast->evaluate, eval $inp, "$inp, Interpreter pattern";
+#    warn MarpaX::AST::dumper( $i->ast );
+    is $ast->evaluate, eval $inp, "$inp, Interpreter pattern";
 }
 
 done_testing();
