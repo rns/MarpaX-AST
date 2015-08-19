@@ -24,6 +24,9 @@ my $root;
 sub new {
     my ($class, $ast, $opts) = @_;
 
+    croak "Arg 1 must be defined" unless defined $ast;
+    croak "Arg 1 must be a reference, not $ast" unless ref $ast;
+
     # change children start index, if set in options
     if (ref $opts eq "HASH"){
         if (exists $opts->{CHILDREN_START}){
@@ -319,6 +322,7 @@ sub sprint{
     $opts->{visit} = sub {
         my ($ast, $context) = @_;
         my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
+        croak "Bad node id: $node_id, not scalar." if ref $node_id;
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
             $s .= qq{$indent $node_id '$children[0]'\n};
