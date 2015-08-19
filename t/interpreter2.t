@@ -18,7 +18,7 @@ use_ok 'MarpaX::AST::Interpreter';
 
 my $prove = $ENV{HARNESS_ACTIVE};
 
-# Note Go4 ignores precedence
+# GoF ignores precedence, Marpa handles it
 my $rules = <<'END_OF_GRAMMAR';
 :default ::= action => [ name, value ]
 lexeme default = action => [ value ] latm => 1
@@ -40,11 +40,7 @@ lexeme default = action => [ value ] latm => 1
 whitespace ~ [\s]+
 END_OF_GRAMMAR
 
-my $grammar = Marpa::R2::Scanless::G->new(
-    {   bless_package => 'Boolean_Expression',
-        source        => \$rules,
-    }
-);
+my $grammar = Marpa::R2::Scanless::G->new({ source => \$rules, });
 
 sub expr_to_ast {
     my ($expr) = @_;
@@ -57,36 +53,36 @@ sub expr_to_ast {
     return MarpaX::AST->new( ${$value_ref} );
 }
 
-my $demo_context = Context->new();
-$demo_context->assign( x => 0 );
-$demo_context->assign( y => 1 );
-$demo_context->assign( z => 1 );
-is $demo_context->show(), 'x=0 y=1 z=1', "context";
+my $context = Boolean_Expression::Context->new();
+$context->assign( x => 0 );
+$context->assign( y => 1 );
+$context->assign( z => 1 );
+is $context->show(), 'x=0 y=1 z=1', "context";
 
-my $expr  = q{true and x or y and not x};
+my $expr = q{true and x or y and not x};
 my $ast1 = expr_to_ast($expr);
 # warn "# ast1:\n", $ast1->sprint;
 diag qq{Boolean 1 is "$expr"} unless $prove;
 
 my $interp = MarpaX::AST::Interpreter->new({
     namespace => 'Boolean_Expression',
-    context => $demo_context,
+    context => $context,
 });
 
 is 'Value is ' . ($interp->evaluate($ast1) ? 'true' : 'false'),
     'Value is true', 'ast1 eval';
-eq_or_diff $ast1->sprint, q{ or
-   and
-     variable
-       true
-     variable
-       x
-   and
-     variable
-       y
-     not
-       variable
-         x
+eq_or_diff $ast1->sprint, q{or
+  and
+    variable
+      true
+    variable
+      x
+  and
+    variable
+      y
+    not
+      variable
+        x
 }, 'ast1 dump';
 
 
@@ -95,33 +91,33 @@ my $ast2 = expr_to_ast($expr);
 # warn "# ast2:\n", $ast2->sprint;
 diag qq{Boolean 2 is "$expr"} unless $prove;
 is 'Value is ' . ($interp->evaluate($ast2) ? 'true' : 'false'), 'Value is false', 'ast2 eval';
-eq_or_diff $ast2->sprint, q{ not
-   variable
-     z
+eq_or_diff $ast2->sprint, q{not
+  variable
+    z
 }, "ast2 dump";
 
 my $ast3 = $interp->replace( $ast1, 'y', $ast2 );
 # warn "# ast3:\n", $ast3->sprint;
 diag q{Boolean 3 is Boolean 1, with "y" replaced by Boolean 2} unless $prove;
 is 'Value is ' . ($interp->evaluate($ast3) ? 'true' : 'false'), , 'Value is false', 'ast3 eval';
-eq_or_diff $ast3->sprint, q{ or
-   and
-     variable
-       true
-     variable
-       x
-   and
-     not
-       variable
-         z
-     not
-       variable
-         x
+eq_or_diff $ast3->sprint, q{or
+  and
+    variable
+      true
+    variable
+      x
+  and
+    not
+      variable
+        z
+    not
+      variable
+        x
 }, "ast3 dump";
 
 done_testing();
 
-package Context;
+package Boolean_Expression::Context;
 
 sub new {
     my ($class) = @_;
