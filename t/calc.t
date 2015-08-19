@@ -229,6 +229,21 @@ whitespace ~ [\s]+
 END_OF_SOURCE
 } );
 
+package My::Expr::add;
+
+sub cmpt {
+    my (undef, $interp, $ast) = @_;
+    $interp->cmpt($ast->first_child) + $interp->cmpt($ast->last_child)
+}
+
+sub My::Expr::sub::cmpt { $_[1]->cmpt($_[2]->first_child) - $_[1]->cmpt($_[2]->last_child) }
+sub My::Expr::mul::cmpt { $_[1]->cmpt($_[2]->first_child) * $_[1]->cmpt($_[2]->last_child) }
+sub My::Expr::div::cmpt { $_[1]->cmpt($_[2]->first_child) / $_[1]->cmpt($_[2]->last_child) }
+sub My::Expr::pow::cmpt { $_[1]->cmpt($_[2]->first_child) ** $_[1]->cmpt($_[2]->last_child) }
+
+sub My::Expr::num::cmpt { $_[2]->first_child->text }
+sub My::Expr::par::cmpt { $_[1]->cmpt($_[2]->first_child) }
+
 sub My::Expr::var::cmpt{ $_[1]->ctx->{ $_[2]->first_child->text } }
 
 package main;
