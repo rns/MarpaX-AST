@@ -16,19 +16,21 @@ use Marpa::R2;
 use_ok 'MarpaX::AST';
 use_ok 'MarpaX::AST::Interpreter';
 
+my $prove = $ENV{HARNESS_ACTIVE};
+
 # Note Go4 ignores precedence
 my $rules = <<'END_OF_GRAMMAR';
 :default ::= action => ::array
 
 :start ::= <boolean expression>
 <boolean expression> ::=
-       <variable> bless => variable
-     | '1' bless => constant
-     | '0' bless => constant
-     | ('(') <boolean expression> (')') action => ::first bless => ::undef
-    || ('not') <boolean expression> bless => not
-    || <boolean expression> ('and') <boolean expression> bless => and
-    || <boolean expression> ('or') <boolean expression> bless => or
+       <variable>                                           bless => variable
+     | '1'                                                  bless => constant
+     | '0'                                                  bless => constant
+     | ('(') <boolean expression> (')') action => ::first   bless => ::undef
+    || ('not') <boolean expression>                         bless => not
+    || <boolean expression> ('and') <boolean expression>    bless => and
+    || <boolean expression> ('or') <boolean expression>     bless => or
 
 <variable> ~ [[:alpha:]] <zero or more word characters>
 <zero or more word characters> ~ [\w]*
@@ -62,7 +64,7 @@ is $demo_context->show(), 'x=0 y=1 z=1', "context";
 
 my $bnf  = q{true and x or y and not x};
 my $ast1 = bnf_to_ast($bnf);
-diag qq{Boolean 1 is "$bnf"};
+diag qq{Boolean 1 is "$bnf"} unless $prove;
 is 'Value is ' . ($ast1->evaluate($demo_context) ? 'true' : 'false'),
     'Value is true', 'ast1 eval';
 eq_or_diff MarpaX::AST::dumper($ast1), q{bless( [
@@ -90,7 +92,7 @@ eq_or_diff MarpaX::AST::dumper($ast1), q{bless( [
 
 $bnf = 'not z';
 my $ast2 = bnf_to_ast($bnf);
-diag qq{Boolean 2 is "$bnf"};
+diag qq{Boolean 2 is "$bnf"} unless $prove;
 is 'Value is ' . ($ast2->evaluate($demo_context) ? 'true' : 'false'), 'Value is false', 'ast2 eval';
 eq_or_diff MarpaX::AST::dumper($ast2), q{bless( [
   bless( [
@@ -100,7 +102,7 @@ eq_or_diff MarpaX::AST::dumper($ast2), q{bless( [
 }, "ast2 dump";
 
 my $ast3 = $ast1->replace( 'y', $ast2 );
-diag q{Boolean 3 is Boolean 1, with "y" replaced by Boolean 2};
+diag q{Boolean 3 is Boolean 1, with "y" replaced by Boolean 2} unless $prove;
 is 'Value is ' . ($ast3->evaluate($demo_context) ? 'true' : 'false'), , 'Value is false', 'ast3 eval';
 eq_or_diff MarpaX::AST::dumper($ast3), q{bless( [
   bless( [
