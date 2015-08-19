@@ -174,29 +174,79 @@ for my $inp (@inputs){
 #
 use_ok 'MarpaX::AST::Interpreter';
 
-sub My::Expr::num::cmpt { $_[2]->first_child->text }
-sub My::Expr::add::cmpt { $_[1]->cmpt($_[2]->first_child) + $_[1]->cmpt($_[2]->last_child) }
+sub My::Expr::add::cmpt {
+    my (undef, $interp, $ast) = @_;
+    $interp->cmpt($ast->first_child) + $interp->cmpt($ast->last_child)
+}
+
 sub My::Expr::sub::cmpt { $_[1]->cmpt($_[2]->first_child) - $_[1]->cmpt($_[2]->last_child) }
 sub My::Expr::mul::cmpt { $_[1]->cmpt($_[2]->first_child) * $_[1]->cmpt($_[2]->last_child) }
 sub My::Expr::div::cmpt { $_[1]->cmpt($_[2]->first_child) / $_[1]->cmpt($_[2]->last_child) }
 sub My::Expr::pow::cmpt { $_[1]->cmpt($_[2]->first_child) ** $_[1]->cmpt($_[2]->last_child) }
+
+sub My::Expr::num::cmpt { $_[2]->first_child->text }
 sub My::Expr::par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 
 package main;
 
 for my $inp (@inputs){
     $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
-#    warn $ast->sprint;
+    warn $ast->sprint;
     my $i = MarpaX::AST::Interpreter->new( {
         namespace => 'My::Expr',
     } );
 #    warn MarpaX::AST::dumper( $i->ast );
     is $i->cmpt($ast), # context-free interpreting :)
-        eval $inp, "$inp, Interpreter pattern";
+        eval $inp, "$inp, Interpreter pattern (context-free)";
 }
 
 #
 # evaluate ast using Interpreter pattern (in context)
 #
+$g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
+
+:default ::= action => [ name, value ]
+lexeme default = action => [ name, value ] latm => 1
+
+    Expr ::=
+          Var                                 name => 'var'
+       || Number                              name => 'num'
+       || ('(') Expr (')')  assoc => group    name => 'par'
+       || Expr ('**') Expr  assoc => right    name => 'pow'
+       || Expr ('*') Expr                     name => 'mul'
+        | Expr ('/') Expr                     name => 'div'
+       || Expr ('+') Expr                     name => 'add'
+        | Expr ('-') Expr                     name => 'sub'
+
+    Number ~ [\d]+
+    Var    ~ [a-z]+
+
+:discard ~ whitespace
+whitespace ~ [\s]+
+
+END_OF_SOURCE
+} );
+
+sub My::Expr::var::cmpt{ $_[1]->ctx->{ $_[2]->first_child->text } }
+
+package main;
+
+@inputs = qw{   x-1+y*z    (x+y)*(a+b)    (a+b)*(x+y)**12/5   };
+
+for my $inp (@inputs){
+    $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
+#    warn $ast->sprint;
+    my $context = { a => 42, b => 84, x => 1, y => 2, z => 3 };
+    my $i = MarpaX::AST::Interpreter->new( {
+        namespace => 'My::Expr',
+        context => $context,
+    } );
+
+    my $subst = $inp;
+    $subst =~ s/$_/$context->{$_}/g for keys %{ $context };
+
+    is $i->cmpt($ast), # contextual interpreting
+        eval $subst, "$inp, Interpreter pattern (in context)";
+}
 
 done_testing();
