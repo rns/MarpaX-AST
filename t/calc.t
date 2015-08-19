@@ -129,7 +129,7 @@ sub visit_pow{
     $v->visit( $ast->first_child ) ** $v->visit( $ast->last_child )
 }
 
-sub visit_parenthesized{
+sub visit_par{
     my ($v, $ast) = @_;
     $v->visit( $ast->first_child )
 }
@@ -145,7 +145,7 @@ lexeme default = action => [ name, value ] latm => 1
     # we need to add name's, but may omit all literals
     Expr ::=
           Number                              name => 'num'
-        | ('(') Expr (')')  assoc => group    name => 'parenthesized'
+        | ('(') Expr (')')  assoc => group    name => 'par'
        || Expr ('**') Expr  assoc => right    name => 'pow'
        || Expr ('*') Expr                     name => 'mul'
         | Expr ('/') Expr                     name => 'div'
@@ -170,49 +170,33 @@ for my $inp (@inputs){
 }
 
 #
-# evaluate ast using Interpreter pattern ($i is for interperter)
+# evaluate ast using Interpreter pattern (context-free)
 #
 use_ok 'MarpaX::AST::Interpreter';
 
-package My::Expr::num;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->text }
-
-package My::Expr::add;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->evaluate + $_[0]->last_child->evaluate }
-
-package My::Expr::sub;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->evaluate - $_[0]->last_child->evaluate }
-
-package My::Expr::mul;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->evaluate * $_[0]->last_child->evaluate }
-
-package My::Expr::div;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->evaluate / $_[0]->last_child->evaluate }
-
-package My::Expr::pow;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->evaluate ** $_[0]->last_child->evaluate }
-
-package My::Expr::parenthesized;
-use parent 'MarpaX::AST';
-sub evaluate { $_[0]->first_child->evaluate }
+sub My::Expr::num::cmpt { $_[1]->first_child->text }
+sub My::Expr::add::cmpt { $_[2]->cmpt($_[1]->first_child) + $_[2]->cmpt($_[1]->last_child) }
+sub My::Expr::sub::cmpt { $_[2]->cmpt($_[1]->first_child) - $_[2]->cmpt($_[1]->last_child) }
+sub My::Expr::mul::cmpt { $_[2]->cmpt($_[1]->first_child) * $_[2]->cmpt($_[1]->last_child) }
+sub My::Expr::div::cmpt { $_[2]->cmpt($_[1]->first_child) / $_[2]->cmpt($_[1]->last_child) }
+sub My::Expr::pow::cmpt { $_[2]->cmpt($_[1]->first_child) ** $_[2]->cmpt($_[1]->last_child) }
+sub My::Expr::par::cmpt { $_[2]->cmpt($_[1]->first_child) }
 
 package main;
 
 for my $inp (@inputs){
     $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
 #    warn $ast->sprint;
-    my $i = MarpaX::AST::Interpreter->new( $ast, {
+    my $i = MarpaX::AST::Interpreter->new( {
         namespace => 'My::Expr',
-        skip => [qw{ Number }]
     } );
 #    warn MarpaX::AST::dumper( $i->ast );
-    is $ast->evaluate, eval $inp, "$inp, Interpreter pattern";
+    is $i->cmpt($ast), # context-free interpreting :)
+        eval $inp, "$inp, Interpreter pattern";
 }
+
+#
+# evaluate ast using Interpreter pattern (in context)
+#
 
 done_testing();
