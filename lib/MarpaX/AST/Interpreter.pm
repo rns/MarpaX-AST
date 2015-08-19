@@ -42,8 +42,10 @@ use vars qw($AUTOLOAD);
 
 sub AUTOLOAD{
     my ($interpreter, $ast, @tail) = @_;
+    croak "Arg 1 must be an interpreter, not $interpreter." unless $interpreter->isa(__PACKAGE__);
+    croak "Arg 2 must be an AST, not $ast." unless $ast->isa('MarpaX::AST');
 
-    state $level = 0; # ??? once per new
+    state $level = 0; # todo: check if $ast is root?
     my $context = $interpreter->{context};
     $context->{level} = $level;
 
@@ -69,9 +71,10 @@ sub AUTOLOAD{
 #    warn $package;
     # default package
     $package //= $interpreter->{namespace} . '::' . $node_id;
+    croak "Package $package isn't loaded." unless defined *{$package . '::'};
 
     my $method = (split /::/, $AUTOLOAD)[-1];
-    croak "Package $package isn't loaded." unless defined *{$package . '::'};
+    croak "Method $method not defined in package $package." unless $package->can($method);
 
     $level++;
     my $result = $package->$method($interpreter, $ast, @tail);
