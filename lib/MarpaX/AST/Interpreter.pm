@@ -25,7 +25,7 @@ sub AUTOLOAD{
     croak "Package $package isn't loaded." unless defined *{$package . '::'};
 
     $level++;
-    my $result = $package->$method($ast, $interp);
+    my $result = $package->$method($interp, $ast);
     $level--;
 
     return $result;
