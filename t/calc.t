@@ -174,27 +174,29 @@ for my $inp (@inputs){
 #
 use_ok 'MarpaX::AST::Interpreter';
 
-sub My::Expr::add::cmpt {
+sub add::cmpt {
     my (undef, $interp, $ast) = @_;
     $interp->cmpt($ast->first_child) + $interp->cmpt($ast->last_child)
 }
 
-sub My::Expr::sub::cmpt { $_[1]->cmpt($_[2]->first_child) - $_[1]->cmpt($_[2]->last_child) }
-sub My::Expr::mul::cmpt { $_[1]->cmpt($_[2]->first_child) * $_[1]->cmpt($_[2]->last_child) }
-sub My::Expr::div::cmpt { $_[1]->cmpt($_[2]->first_child) / $_[1]->cmpt($_[2]->last_child) }
-sub My::Expr::pow::cmpt { $_[1]->cmpt($_[2]->first_child) ** $_[1]->cmpt($_[2]->last_child) }
+sub sub::cmpt { $_[1]->cmpt($_[2]->first_child) - $_[1]->cmpt($_[2]->last_child) }
+sub mul::cmpt { $_[1]->cmpt($_[2]->first_child) * $_[1]->cmpt($_[2]->last_child) }
+sub div::cmpt { $_[1]->cmpt($_[2]->first_child) / $_[1]->cmpt($_[2]->last_child) }
+sub pow::cmpt { $_[1]->cmpt($_[2]->first_child) ** $_[1]->cmpt($_[2]->last_child) }
 
-sub My::Expr::num::cmpt { $_[2]->first_child->text }
-sub My::Expr::par::cmpt { $_[1]->cmpt($_[2]->first_child) }
+sub num::cmpt { $_[2]->first_child->text }
+sub par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 
 package main;
 
 for my $inp (@inputs){
     $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
-    warn $ast->sprint;
-    my $i = MarpaX::AST::Interpreter->new( {
-        namespace => 'My::Expr',
-    } );
+#    warn $ast->sprint;
+
+    # create interpreter with default options:
+    # node_id packages in main::*, context initialized to { }
+    my $i = MarpaX::AST::Interpreter->new();
+
 #    warn MarpaX::AST::dumper( $i->ast );
     is $i->cmpt($ast), # context-free interpreting :)
         eval $inp, "$inp, Interpreter pattern (context-free)";

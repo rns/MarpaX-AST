@@ -8,7 +8,8 @@ use Carp;
 
 sub new{
     my ($class, $opts) = @_;
-    my $interp = { %$opts };
+    my $interp = { %$opts } if defined $opts;
+    $interp->{namespace} //= 'main';
     $interp->{context} //= {};
     bless $interp, $class;
 }
