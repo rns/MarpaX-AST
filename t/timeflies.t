@@ -94,6 +94,15 @@ for my $sentence (split /\n/, $paragraph){
     }
 }
 
+# trim whitespaces/newlines and check
+sub bracketed_ok {
+    my ($expected, $actual, $msg) = @_;
+    my $got = join ( "\n", @{ $actual } ) . "\n";
+    $got =~ s{\s+\n}{\n}gms;
+
+    eq_or_diff( $got, $expected, $msg );
+}
+
 #
 # recursion
 #
@@ -119,10 +128,7 @@ sub ast_bracket{
     return $result;
 }
 
-my $got = join ( "\n", @actual ) . "\n";
-$got =~ s{\s+\n}{\n}gms;
-
-eq_or_diff( $got, $expected, 'Ambiguous English sentences, recursion' );
+bracketed_ok($expected, \@actual, 'Ambiguous English sentences, recursion' );
 
 # Visitor inheritance for custom options
 package My::Visitor;
@@ -158,10 +164,7 @@ my $v = My::Visitor->new;
 
 @actual = map { my $ast = MarpaX::AST->new($_); $v->visit($ast) } @values;
 
-$got = join ( "\n", @actual ) . "\n";
-$got =~ s{\s+\n}{\n}gms;
-
-eq_or_diff( $got, $expected, 'Ambiguous English sentences, Visitor pattern' );
+bracketed_ok($expected, \@actual, 'Ambiguous English sentences, Visitor pattern'  );
 
 # Interpreter inheritance for custom options
 package My::Interpreter;
@@ -196,10 +199,6 @@ package main;
 my $i = My::Interpreter->new;
 
 @actual = map { my $ast = MarpaX::AST->new($_); $i->bracket($ast) } @values;
-
-$got = join ( "\n", @actual ) . "\n";
-$got =~ s{\s+\n}{\n}gms;
-
-eq_or_diff( $got, $expected, 'Ambiguous English sentences, Interpreter pattern' );
+bracketed_ok($expected, \@actual, 'Ambiguous English sentences, Interpreter pattern' );
 
 done_testing();
