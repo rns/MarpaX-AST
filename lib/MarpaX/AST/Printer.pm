@@ -15,6 +15,7 @@ todo: Implement vertical, horizontal, indented box model per [1] and [2] conside
 
 [3] Preserving the Documentary Structure of Source Code in Language-based Transformation Tools, http://www.informatik.uni-bremen.de/st/lehre/Arte-fakt/Seminar/papers/16/COM.sun.mlvdv.doc.scam_nov01.paper_pdf.pdf
 
+https://github.com/mn-mikke/Model-driven-Pretty-Printer-for-Xtext-Framework/wiki/Pretty-Printers-using-Box--Models
 
 =cut
 
