@@ -855,6 +855,25 @@ sub parse {
 
 } ## end sub parse
 
+# todo: decode by export()
+sub export {
+    my ($parser, $ast) = @_;
+    warn $ast->sprint;
+#    $ast->distill();
+    return $ast->export({
+        hash       => [qw{ members }],
+        hash_item  => [qw{ pair }],
+        array      => [qw{ elements }],
+        array_item => [qw{ item }],
+        # literals
+        true    => 1 == 1,
+        false   => 0 == 1,
+        null    => undef,
+    });
+}
+
+# todo: attach comments to nodes()
+
 sub decode {
     my ($parser, $ast) = @_;
 
