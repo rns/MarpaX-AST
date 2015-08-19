@@ -343,6 +343,7 @@ sub distill{
     my $class = ref $ast;
 
     my $root = $class->new( [ $opts->{root} //= $ast->id, @$ast[1..$CHILDREN_START-1] ] );
+    my $skip_root = $root->id eq $ast->id;
     my $parents = [ $root ];
 
     # append_literals_as_parents requires code commented # convert childless nodes to bare literals below
@@ -356,7 +357,7 @@ sub distill{
             ref $opts->{skip} eq 'ARRAY' ? sub {
                 my ($ast) = @_;
                 my ($node_id) = @$ast;
-                state $skip = { map { $_ => 1 } @{ $opts->{skip} } };
+                state $skip = { map { $_ => 1 } @{ $opts->{skip} }, $skip_root ? $root->id : '' };
                 return exists $skip->{ $node_id }
             } : $opts->{skip},
         visit => sub {
