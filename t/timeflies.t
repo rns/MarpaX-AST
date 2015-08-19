@@ -124,7 +124,7 @@ $got =~ s{\s+\n}{\n}gms;
 
 eq_or_diff( $got, $expected, 'Ambiguous English sentences, recursion' );
 
-# Visitor
+# Visitor inheritance for custom options
 package My::Visitor;
 
 use parent 'MarpaX::AST::Visitor';
@@ -139,8 +139,9 @@ sub new{
 
 sub visit_structural{
     my ($visitor, $ast, $context) = @_;
+    my $level = $context->{level};
     return "\n" . ("  " x $context->{level}) . '(. .)' if $ast->id eq 'period';
-    return ($ast->id eq 'S' ? '' : "\n") . ("  " x $context->{level}) .
+    return ($ast->id eq 'S' ? '' : "\n") . ("  " x $level) .
         '(' .
         $ast->id . join(' ', map { $visitor->visit($_) } @{ $ast->children() } ) .
         ')';
@@ -161,5 +162,44 @@ $got = join ( "\n", @actual ) . "\n";
 $got =~ s{\s+\n}{\n}gms;
 
 eq_or_diff( $got, $expected, 'Ambiguous English sentences, Visitor pattern' );
+
+# Interpreter inheritance for custom options
+package My::Interpreter;
+use parent 'MarpaX::AST::Interpreter';
+
+sub new{
+    my ($class) = @_;
+    return $class->SUPER::new( {
+        namespace => 'My::Interpreter',
+        'My::Interpreter::structural' => [qw{ S NP VP PP period }],
+        'My::Interpreter::literal' => sub { $_[0]->is_literal }
+    } );
+}
+
+sub My::Interpreter::structural::bracket{
+    my (undef, $interpreter, $ast) = @_;
+    my $level = $interpreter->context->{level};
+    return "\n" . ("  " x $level) . '(. .)' if $ast->id eq 'period';
+    return ($ast->id eq 'S' ? '' : "\n") . ("  " x $level) .
+        '(' .
+        $ast->id . join(' ', map { $interpreter->bracket($_) } @{ $ast->children() } ) .
+        ')';
+}
+
+sub My::Interpreter::literal::bracket{
+    my (undef, $interpreter, $ast) = @_;
+    return '(' . $ast->id . ' ' . $ast->text . ')';
+}
+
+package main;
+
+my $i = My::Interpreter->new;
+
+@actual = map { my $ast = MarpaX::AST->new($_); $i->bracket($ast) } @values;
+
+$got = join ( "\n", @actual ) . "\n";
+$got =~ s{\s+\n}{\n}gms;
+
+eq_or_diff( $got, $expected, 'Ambiguous English sentences, Interpreter pattern' );
 
 done_testing();
