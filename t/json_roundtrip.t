@@ -2,7 +2,7 @@
 
 # Copyright 2015 Ruslan Shvedov
 
-# json decoding
+# json roundtripping and decoding
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_json.t
 
 # requirements to grammar for round-trip parsers
@@ -39,6 +39,7 @@ my $json_one_liners = [
 
 for my $json_one_liner (@$json_one_liners){
     is $p->roundtrip_json($json_one_liner), $json_one_liner, $json_one_liner;
+    warn MarpaX::AST::dumper($p->decode_json($json_one_liner));
 }
 
 my $locations = <<JSON;
@@ -67,6 +68,7 @@ my $locations = <<JSON;
 JSON
 
 is $p->roundtrip_json($locations), $locations, "locations";
+warn MarpaX::AST::dumper($p->decode_json($locations));
 
 my $image = <<'JSON';
 # this is a hash comment to image json file test
@@ -858,68 +860,30 @@ sub parse {
 # todo: decode by export()
 sub export {
     my ($parser, $ast) = @_;
+#    warn $ast->sprint;
+    $ast = $ast->distill({
+        skip => [qw{ members elements value comma colon string },
+            'left curly', 'left square', 'right curly', 'right square' ]
+    });
     warn $ast->sprint;
-#    $ast->distill();
     return $ast->export({
-        hash       => [qw{ members }],
+        hash       => [qw{ object }],
         hash_item  => [qw{ pair }],
-        array      => [qw{ elements }],
-        array_item => [qw{ item }],
+        array      => [qw{ array }],
+#        array_item => [qw{ object }],
         # literals
         true    => 1 == 1,
         false   => 0 == 1,
         null    => undef,
+        lstring => sub {} # remove quotes
     });
 }
 
 # todo: attach comments to nodes()
 
-sub decode {
-    my ($parser, $ast) = @_;
-
-    if (ref $ast){
-        my ($id, $start, $length, @nodes) = @$ast;
-        if ($id eq 'json'){
-            $parser->decode(@nodes);
-        }
-        elsif ($id eq 'members'){
-            return { map { $parser->decode($_) } @nodes };
-        }
-        elsif ($id eq 'pair'){
-            return map { $parser->decode($_) } @nodes;
-        }
-        elsif ($id eq 'elements'){
-            return [ map { $parser->decode($_) } @nodes ];
-        }
-        elsif ($id eq 'string'){
-            return decode_string( substr $nodes[0]->[3], 1, -1 );
-        }
-        elsif ($id eq 'number'){
-            return $nodes[0];
-        }
-        elsif ($id eq 'object'){
-            return {} unless @nodes;
-            return $parser->decode($_) for @nodes;
-        }
-        elsif ($id eq 'array'){
-            return [] unless @nodes;
-            return $parser->decode($_) for @nodes;
-        }
-        else{
-            return $parser->decode($_) for @nodes;
-        }
-    }
-    else
-    {
-        if ($ast eq 'true' or $ast eq 'false'){ return $ast eq 'true' }
-        elsif ($ast eq 'null' ){ return undef }
-        else { warn "unknown scalar <$ast>"; return '' }
-    }
-}
-
 sub decode_json {
     my ($parser, $input) = @_;
-    return $parser->decode( $parser->parse($input) );
+    return $parser->export( MarpaX::AST->new( $parser->parse($input) ) );
 }
 
 sub roundtrip_json {

@@ -540,7 +540,12 @@ sub internalize{
     # convert array refs to hashes for node id lookup
     while (my ($k, $v) = each %$external_schema){
         my $v_href = {};
-        $v_href->{$_} = 1 for @$v;
+        if (ref $v eq "ARRAY"){
+            $v_href->{$_} = 1 for @$v;
+        }
+        else{
+            $v_href->{$k} = $v;
+        }
         $external_schema->{$k} = $v_href;
     }
 #    warn "# internal schema:\n", dumper($external_schema);
@@ -581,9 +586,9 @@ sub do_export{
                 # todo: validate $ast according to $schema
                 # assuming pre-validation
                 # array item is indexed [ $index, $value ]
-                if (ref $item eq "HASH") {
+                if (ref $item eq "HASH" and my $indexed_array_item = $item->{'indexed array item'}) {
 #                    warn "indexed array item ", dumper($item);
-                    $items->[ $item->{index} ] = $item->{value}
+                    $items->[ $indexed_array_item->{index} ] = $indexed_array_item->{value}
                 }
                 # array item is bare (scalar)
                 else {
@@ -602,7 +607,9 @@ sub do_export{
             if (@$children == 2){
 #                warn "indexed array item";
                 my ($index, $value) = @$children;
-                return { index => $index->text, value => $value->do_export($schema) };
+                return { 'indexed array item' =>
+                    { index => $index->text, value => $value->do_export($schema) }
+                    };
             }
             elsif(@$children == 1){
                 return $children->[0]->do_export($schema);
