@@ -53,6 +53,8 @@ sub expr_to_ast {
     return MarpaX::AST->new( ${$value_ref} );
 }
 
+sub trim{ my ($s) = @_; $s =~ s/^\s+//; $s }
+
 my $context = Boolean_Expression::Context->new();
 $context->assign( x => 0 );
 $context->assign( y => 1 );
@@ -71,7 +73,8 @@ my $interp = MarpaX::AST::Interpreter->new({
 
 is 'Value is ' . ($interp->evaluate($ast1) ? 'true' : 'false'),
     'Value is true', 'ast1 eval';
-eq_or_diff $ast1->sprint, q{or
+eq_or_diff $ast1->sprint, trim(q{
+or
   and
     variable
       true
@@ -83,7 +86,7 @@ eq_or_diff $ast1->sprint, q{or
     not
       variable
         x
-}, 'ast1 dump';
+}), 'ast1 dump';
 
 
 $expr = 'not z';
@@ -91,16 +94,18 @@ my $ast2 = expr_to_ast($expr);
 # warn "# ast2:\n", $ast2->sprint;
 diag qq{Boolean 2 is "$expr"} unless $prove;
 is 'Value is ' . ($interp->evaluate($ast2) ? 'true' : 'false'), 'Value is false', 'ast2 eval';
-eq_or_diff $ast2->sprint, q{not
+eq_or_diff $ast2->sprint, trim(q{
+not
   variable
     z
-}, "ast2 dump";
+}), "ast2 dump";
 
 my $ast3 = $interp->replace( $ast1, 'y', $ast2 );
 # warn "# ast3:\n", $ast3->sprint;
 diag q{Boolean 3 is Boolean 1, with "y" replaced by Boolean 2} unless $prove;
 is 'Value is ' . ($interp->evaluate($ast3) ? 'true' : 'false'), , 'Value is false', 'ast3 eval';
-eq_or_diff $ast3->sprint, q{or
+eq_or_diff $ast3->sprint, trim(q{
+or
   and
     variable
       true
@@ -113,7 +118,7 @@ eq_or_diff $ast3->sprint, q{or
     not
       variable
         x
-}, "ast3 dump";
+}), "ast3 dump";
 
 done_testing();
 
