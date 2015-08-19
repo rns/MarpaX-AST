@@ -49,10 +49,10 @@ sub visit{
     my $method;
     # check method spec
     if (my $method_by_node = $visitor->{method_spec}->{node_ids}->{$node_id}){
-#        warn "by code";
+#        warn "by node";
         $method = $method_by_node;
     }
-    # first method, whose predicate returns true will be used
+    # first method whose predicate returns true will be used
     elsif (my $methods = $visitor->{method_spec}->{methods}){
 #        warn "by predicate";
         for my $method_by_predicate (keys %{$methods}){
