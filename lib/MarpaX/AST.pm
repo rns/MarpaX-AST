@@ -325,10 +325,10 @@ sub sprint{
         croak "Bad node id: $node_id, not scalar." if ref $node_id;
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
-            $s .= qq{$indent $node_id '$children[0]'\n};
+            $s .= qq{$indent$node_id '$children[0]'\n};
         }
         else{
-            $s .= qq{$indent $node_id\n};
+            $s .= qq{$indent$node_id\n};
         }
     };
 

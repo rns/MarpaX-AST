@@ -54,19 +54,19 @@ $ast = MarpaX::AST->new( $$ast, { CHILDREN_START => 3 } );
 # distill
 #
 my $expected_distilled = <<EOS;
- root
-   #text '[Testing.User]'
-   Info
-     #text '[Testing.Info]'
-     Name
-       #text '[System.String]'
-       #text 'Matt'
-     Age
-       #text '[System.Int32]'
-       #text '21'
-   Description
-     #text '[System.String]'
-     #text 'This is some description'
+root
+  #text '[Testing.User]'
+  Info
+    #text '[Testing.Info]'
+    Name
+      #text '[System.String]'
+      #text 'Matt'
+    Age
+      #text '[System.Int32]'
+      #text '21'
+  Description
+    #text '[System.String]'
+    #text 'This is some description'
 EOS
 
 my $raw_ast = $ast;
