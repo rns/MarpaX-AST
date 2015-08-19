@@ -249,11 +249,12 @@ sub My::Expr::var::cmpt{ $_[1]->ctx->{ $_[2]->first_child->text } }
 package main;
 
 @inputs = qw{   x-1+y*z    (x+y)*(a+b)    (a+b)*(x+y)**12/5   };
+my $context = { a => 42, b => 84, x => 1, y => 2, z => 3 };
 
 for my $inp (@inputs){
     $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
 #    warn $ast->sprint;
-    my $context = { a => 42, b => 84, x => 1, y => 2, z => 3 };
+
     my $i = MarpaX::AST::Interpreter->new( {
         namespace => 'My::Expr',
         context => $context,
