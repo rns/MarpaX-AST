@@ -20,17 +20,18 @@ my $prove = $ENV{HARNESS_ACTIVE};
 
 # Note Go4 ignores precedence
 my $rules = <<'END_OF_GRAMMAR';
-:default ::= action => ::array
+:default ::= action => [ name, value ]
+lexeme default = action => [ value ] latm => 1
 
 :start ::= <boolean expression>
 <boolean expression> ::=
-       <variable>                                           bless => variable
-     | '1'                                                  bless => constant
-     | '0'                                                  bless => constant
-     | ('(') <boolean expression> (')') action => ::first   bless => ::undef
-    || ('not') <boolean expression>                         bless => not
-    || <boolean expression> ('and') <boolean expression>    bless => and
-    || <boolean expression> ('or') <boolean expression>     bless => or
+       <variable>                                           name => 'variable'
+     | '1'                                                  name => 'constant'
+     | '0'                                                  name => 'constant'
+     | ('(') <boolean expression> (')')                     name => 'parenthesized'
+    || ('not') <boolean expression>                         name => 'not'
+    || <boolean expression> ('and') <boolean expression>    name => 'and'
+    || <boolean expression> ('or') <boolean expression>     name => 'or'
 
 <variable> ~ [[:alpha:]] <zero or more word characters>
 <zero or more word characters> ~ [\w]*
@@ -45,16 +46,16 @@ my $grammar = Marpa::R2::Scanless::G->new(
     }
 );
 
-sub bnf_to_ast {
-    my ($bnf) = @_;
+sub expr_to_ast {
+    my ($expr) = @_;
     my $recce = Marpa::R2::Scanless::R->new( { grammar => $grammar } );
-    $recce->read( \$bnf );
+    $recce->read( \$expr );
     my $value_ref = $recce->value();
     if ( not defined $value_ref ) {
-        die "No parse for $bnf";
+        die "No parse for $expr";
     }
-    return ${$value_ref};
-} ## end sub bnf_to_ast
+    return MarpaX::AST->new( ${$value_ref} );
+}
 
 my $demo_context = Context->new();
 $demo_context->assign( x => 0 );
@@ -62,70 +63,60 @@ $demo_context->assign( y => 1 );
 $demo_context->assign( z => 1 );
 is $demo_context->show(), 'x=0 y=1 z=1', "context";
 
-my $bnf  = q{true and x or y and not x};
-my $ast1 = bnf_to_ast($bnf);
-diag qq{Boolean 1 is "$bnf"} unless $prove;
-is 'Value is ' . ($ast1->evaluate($demo_context) ? 'true' : 'false'),
+my $expr  = q{true and x or y and not x};
+my $ast1 = expr_to_ast($expr);
+# warn "# ast1:\n", $ast1->sprint;
+diag qq{Boolean 1 is "$expr"} unless $prove;
+
+my $interp = MarpaX::AST::Interpreter->new({
+    namespace => 'Boolean_Expression',
+    context => $demo_context,
+});
+
+is 'Value is ' . ($interp->evaluate($ast1) ? 'true' : 'false'),
     'Value is true', 'ast1 eval';
-eq_or_diff MarpaX::AST::dumper($ast1), q{bless( [
-  bless( [
-    bless( [
-      "true"
-    ], 'Boolean_Expression::variable' ),
-    bless( [
-      "x"
-    ], 'Boolean_Expression::variable' )
-  ], 'Boolean_Expression::and' ),
-  bless( [
-    bless( [
-      "y"
-    ], 'Boolean_Expression::variable' ),
-    bless( [
-      bless( [
-        "x"
-      ], 'Boolean_Expression::variable' )
-    ], 'Boolean_Expression::not' )
-  ], 'Boolean_Expression::and' )
-], 'Boolean_Expression::or' )
+eq_or_diff $ast1->sprint, q{ or
+   and
+     variable
+       true
+     variable
+       x
+   and
+     variable
+       y
+     not
+       variable
+         x
 }, 'ast1 dump';
 
 
-$bnf = 'not z';
-my $ast2 = bnf_to_ast($bnf);
-diag qq{Boolean 2 is "$bnf"} unless $prove;
-is 'Value is ' . ($ast2->evaluate($demo_context) ? 'true' : 'false'), 'Value is false', 'ast2 eval';
-eq_or_diff MarpaX::AST::dumper($ast2), q{bless( [
-  bless( [
-    "z"
-  ], 'Boolean_Expression::variable' )
-], 'Boolean_Expression::not' )
+$expr = 'not z';
+my $ast2 = expr_to_ast($expr);
+# warn "# ast2:\n", $ast2->sprint;
+diag qq{Boolean 2 is "$expr"} unless $prove;
+is 'Value is ' . ($interp->evaluate($ast2) ? 'true' : 'false'), 'Value is false', 'ast2 eval';
+eq_or_diff $ast2->sprint, q{ not
+   variable
+     z
 }, "ast2 dump";
 
-my $ast3 = $ast1->replace( 'y', $ast2 );
+my $ast3 = $interp->replace( $ast1, 'y', $ast2 );
+# warn "# ast3:\n", $ast3->sprint;
 diag q{Boolean 3 is Boolean 1, with "y" replaced by Boolean 2} unless $prove;
-is 'Value is ' . ($ast3->evaluate($demo_context) ? 'true' : 'false'), , 'Value is false', 'ast3 eval';
-eq_or_diff MarpaX::AST::dumper($ast3), q{bless( [
-  bless( [
-    bless( [
-      "true"
-    ], 'Boolean_Expression::variable' ),
-    bless( [
-      "x"
-    ], 'Boolean_Expression::variable' )
-  ], 'Boolean_Expression::and' ),
-  bless( [
-    bless( [
-      bless( [
-        "z"
-      ], 'Boolean_Expression::variable' )
-    ], 'Boolean_Expression::not' ),
-    bless( [
-      bless( [
-        "x"
-      ], 'Boolean_Expression::variable' )
-    ], 'Boolean_Expression::not' )
-  ], 'Boolean_Expression::and' )
-], 'Boolean_Expression::or' )
+is 'Value is ' . ($interp->evaluate($ast3) ? 'true' : 'false'), , 'Value is false', 'ast3 eval';
+eq_or_diff $ast3->sprint, q{ or
+   and
+     variable
+       true
+     variable
+       x
+   and
+     not
+       variable
+         z
+     not
+       variable
+         x
 }, "ast3 dump";
 
 done_testing();
@@ -158,101 +149,104 @@ sub show {
 package Boolean_Expression::constant;
 
 sub evaluate {
-    my ( $self, $context ) = @_;
-    my ($value) = @{$self};
+    my ( undef, $interp, $ast ) = @_;
+    my ($value) = $ast->first_child->id;
     return $value;
 }
 
 sub copy {
-    my ($self)  = @_;
-    my ($value) = @{$self};
-    return bless [$value], ref $self;
+    my ( undef, $interp, $ast )  = @_;
+    return MarpaX::AST->new([ $ast->id, [ $ast->first_child->id ] ]);
 }
 
 sub replace {
-    my ($self) = @_;
-    return $self->copy();
+    my ( undef, $interp, $ast )  = @_;
+    return $interp->copy($ast);
 }
 
 package Boolean_Expression::variable;
 
 sub evaluate {
-    my ( $self, $context ) = @_;
-    my ($name) = @{$self};
+    my ( undef, $interp, $ast ) = @_;
+    my ($name) = $ast->first_child->id;
     return 1 if $name eq 'true';
-    return 0
-        if $name eq 'false';
-    my $value = $context->lookup($name);
+    return 0 if $name eq 'false';
+    my $value = $interp->context->lookup($name);
     return $value;
 } ## end sub evaluate
 
 sub copy {
-    my ($self) = @_;
-    my ($name) = @{$self};
-    return bless [$name], ref $self;
+    my ( undef, $interp, $ast) = @_;
+    return MarpaX::AST->new([ $ast->id, [ $ast->first_child->id ] ]);
 }
 
 sub replace {
-    my ( $self, $name_to_replace, $expression ) = @_;
-    my ($my_name) = @{$self};
-    return $expression->copy() if $my_name eq $name_to_replace;
-    return $self->copy();
+    my ( undef, $interp, $ast, $name_to_replace, $expression ) = @_;
+    my ($my_name) = $ast->first_child->id;
+    return $interp->copy($expression) if $my_name eq $name_to_replace;
+    return $interp->copy($ast);
 } ## end sub replace
 
 package Boolean_Expression::not;
 
 sub evaluate {
-    my ( $self, $context ) = @_;
-    my ($exp1) = @{$self};
-    return !$exp1->evaluate($context);
+    my ( undef, $interp, $ast ) = @_;
+    return !$interp->evaluate( $ast->first_child );
 }
 
 sub copy {
-    my ($self) = @_;
-    return bless [ map { $_->copy() } @{$self} ], ref $self;
+    my (undef, $interp, $ast) = @_;
+    return MarpaX::AST->new([
+        $ast->id,
+        map { $interp->copy($_) } @{$ast->children}
+    ]);
 }
 
 sub replace {
-    my ( $self, $name, $expression ) = @_;
-    return bless [ map { $_->replace( $name, $expression ) } @{$self} ],
-        ref $self;
+    my ( undef, $interp, $ast, $name, $expression ) = @_;
+    return MarpaX::AST->new([
+        $ast->id,
+        map { $interp->replace( $_, $name, $expression ) } @{$ast->children}
+    ]);
 }
 
 package Boolean_Expression::and;
 
 sub evaluate {
-    my ( $self, $context ) = @_;
-    my ( $exp1, $exp2 )    = @{$self};
-    return $exp1->evaluate($context) && $exp2->evaluate($context);
+    my ( undef, $interp, $ast ) = @_;
+    $interp->evaluate($ast->first_child) && $interp->evaluate($ast->last_child);
 }
 
 sub copy {
-    my ($self) = @_;
-    return bless [ map { $_->copy() } @{$self} ], ref $self;
+    my ( undef, $interp, $ast ) = @_;
+    return MarpaX::AST->new([ $ast->id, map { $interp->copy($_) } @{$ast->children} ]);
 }
 
 sub replace {
-    my ( $self, $name, $expression ) = @_;
-    return bless [ map { $_->replace( $name, $expression ) } @{$self} ],
-        ref $self;
+    my ( undef, $interp, $ast, $name, $expression ) = @_;
+    return MarpaX::AST->new([
+        $ast->id,
+        map { $interp->replace( $_, $name, $expression ) } @{$ast->children}
+    ]);
 }
 
 package Boolean_Expression::or;
 
 sub evaluate {
-    my ( $self, $context ) = @_;
-    my ( $exp1, $exp2 )    = @{$self};
-    return $exp1->evaluate($context) || $exp2->evaluate($context);
+    my ( undef, $interp, $ast ) = @_;
+    return $interp->evaluate($ast->first_child) || $interp->evaluate($ast->last_child);
 }
 
 sub copy {
-    my ($self) = @_;
-    return bless [ map { $_->copy() } @{$self} ], ref $self;
+    my (undef, $interp, $ast) = @_;
+    return MarpaX::AST->new([ $ast->id, map { $interp->copy($_) } @{$ast->children} ]);
 }
 
 sub replace {
-    my ( $self, $name, $expression ) = @_;
-    return bless [ map { $_->replace( $name, $expression ) } @{$self} ],
-        ref $self;
+    my ( undef, $interp, $ast, $name, $expression ) = @_;
+    return MarpaX::AST->new( [
+        $ast->id,
+        map { $interp->replace( $_, $name, $expression ) } @{$ast->children}
+    ] );
 }
 
