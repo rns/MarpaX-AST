@@ -142,7 +142,7 @@ $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 lexeme default = action => [ name, value ] latm => 1
 
     # as we dispatch based on node id -- methods are defined as visit_$node_id()
-    # we need to add name's, but may omit all literals
+    # or interpreter's packages, we need to add name's, but may omit all literals
     Expr ::=
           Number                              name => 'num'
         | ('(') Expr (')')  assoc => group    name => 'par'
