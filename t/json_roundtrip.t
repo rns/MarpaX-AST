@@ -30,10 +30,7 @@ sub test_decode_json {
     my $decode_got      = $parser->decode_json($input);
     my $decode_expected = decode_json($input);
 
-    unless (is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode}){
-        warn $parser->ast->sprint;
-        warn MarpaX::AST::dumper($decode_got, $decode_expected);
-    }
+    is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode};
 }
 
 sub test_roundtrip_json{
