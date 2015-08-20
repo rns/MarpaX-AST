@@ -44,7 +44,10 @@ use vars qw($AUTOLOAD);
 sub AUTOLOAD{
     my ($interpreter, $ast, @tail) = @_;
 
+    croak "Interpreter undefined" unless defined $interpreter;
     croak "Arg 1 must be a MarpaX::AST::Interpreter, not $interpreter." unless $interpreter->isa('MarpaX::AST::Interpreter');
+
+    croak "AST undefined" unless defined $ast;
     croak "Arg 2 must be a MarpaX::AST, not $ast." unless $ast->isa('MarpaX::AST');
 
 #    warn "# autoload: ", $AUTOLOAD unless $AUTOLOAD =~ m{cmpt$};
