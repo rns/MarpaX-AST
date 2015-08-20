@@ -38,9 +38,12 @@ whitespace ~ [\s]+
 END_OF_SOURCE
 } );
 
-my $input = '4+5*6+8';
+my @inputs = qw{ 4+5*6+8 (4+5)*(6+8) (4+5)*(6+8)**2/5 };
 
-my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
+for my $input (@inputs){
+    my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
+    is ast_eval_AoA($ast), eval $input, "$input, ast_eval_AoA()";
+}
 
 # todo: find a place for this -- node_print for distill? also use ->text()
 =pod
@@ -89,9 +92,15 @@ sub ast_eval{
         elsif ($op eq '/'){ ast_eval($e1) / ast_eval($e2) }
         elsif ($op eq '**'){ ast_eval($e1) ** ast_eval($e2) }
     }
+    else{
+        die "Unknown node: " . $ast->sprint;
+    }
 }
 
-is ast_eval($ast), eval $input, "$input, ast_eval()";
+for my $input (@inputs){
+    my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
+    is ast_eval($ast), eval $input, "$input, ast_eval()";
+}
 
 #
 # evaluate ast using Visitor pattern ($v is for visitor)
@@ -192,8 +201,8 @@ sub par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 
 package main;
 
-for my $inp (@inputs){
-    $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
+for my $input (@inputs){
+    my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
 #    warn $ast->sprint;
 
     # create interpreter with default options:
