@@ -14,7 +14,7 @@ use_ok 'MarpaX::AST';
 my $dumper = \&MarpaX::AST::dumper;
 
 #
-# Unambiguous grammar to parse expressions on numbers
+# Unambiguous grammar to parse arithmetic expressions
 #
 my $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 
@@ -25,7 +25,7 @@ lexeme default = action => [ name, value ] latm => 1
           Number
         | ('(') Expr (')')  assoc => group
        || Expr '**' Expr    assoc => right
-       || Expr '*' Expr     # left associativity is by default
+       || Expr '*' Expr     # left associativity by default
         | Expr '/' Expr
        || Expr '+' Expr
         | Expr '-' Expr
