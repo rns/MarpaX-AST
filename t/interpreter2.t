@@ -140,7 +140,7 @@ sub lookup {
     die qq{Attempt to read undefined boolean variable named "$name"}
         if not defined $value;
     return $value;
-} ## end sub lookup
+}
 
 sub show {
     my ($self) = @_;
@@ -174,7 +174,7 @@ sub evaluate {
     return 0 if $name eq 'false';
     my $value = $interp->context->lookup($name);
     return $value;
-} ## end sub evaluate
+}
 
 sub copy {
     my ( undef, $interp, $ast) = @_;
@@ -186,7 +186,7 @@ sub replace {
     my ($my_name) = $ast->first_child->id;
     return $interp->copy($expression) if $my_name eq $name_to_replace;
     return $interp->copy($ast);
-} ## end sub replace
+}
 
 package Boolean_Expression::not;
 
@@ -198,8 +198,8 @@ sub evaluate {
 sub copy {
     my (undef, $interp, $ast) = @_;
     return MarpaX::AST->new([
-        $ast->id,
-        map { $interp->copy($_) } @{$ast->children}
+        $ast->id,                                       # node id
+        map { $interp->copy($_) } @{$ast->children}     # node children
     ]);
 }
 
@@ -240,7 +240,10 @@ sub evaluate {
 
 sub copy {
     my (undef, $interp, $ast) = @_;
-    return MarpaX::AST->new([ $ast->id, map { $interp->copy($_) } @{$ast->children} ]);
+    return MarpaX::AST->new( [
+        $ast->id,
+        map { $interp->copy($_) } @{$ast->children}
+    ] );
 }
 
 sub replace {
