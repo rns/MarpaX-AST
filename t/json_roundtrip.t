@@ -42,6 +42,35 @@ for my $json_one_liner (@$json_one_liners){
     warn MarpaX::AST::dumper($p->decode_json($json_one_liner));
 }
 
+# http://stackoverflow.com/questions/32110156/parsing-complex-json-in-php
+my $complex_json = <<END;
+{
+    "list" : {
+        "meta" : {
+            "type" : "resource-list",
+            "start" : 0,
+            "count" : 1
+        },
+        "resources" : [{
+                "resource" : {
+                    "classname" : "Quote",
+                    "fields" : {
+                        "name" : "Wal-Mart Stores, Inc. Common St",
+                        "price" : "68.570000",
+                        "symbol" : "WMT",
+                        "ts" : "1440014635",
+                        "type" : "equity",
+                        "utctime" : "2015-08-19T20:03:55+0000",
+                        "volume" : "16333364"
+                    }
+                }
+            }
+        ]
+    }
+}
+END
+warn MarpaX::AST::dumper($p->decode_json($complex_json));
+
 my $locations = <<JSON;
 [
       {
