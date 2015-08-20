@@ -904,7 +904,7 @@ sub export {
         true    => 1 == 1,
         false   => 0 == 1,
         null    => undef,
-        lstring => sub {} # remove quotes
+        lstring => sub { substr $_[0], 1, length($_[0])-2 } # remove quotes
     });
 }
 

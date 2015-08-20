@@ -544,11 +544,8 @@ sub internalize{
         my $v_href = {};
         if (ref $v eq "ARRAY"){
             $v_href->{$_} = 1 for @$v;
+            $external_schema->{$k} = $v_href;
         }
-        else{
-            $v_href->{$k} = $v;
-        }
-        $external_schema->{$k} = $v_href;
     }
 #    warn "# internal schema:\n", dumper($external_schema);
     return $external_schema;
@@ -562,14 +559,19 @@ sub export{
 sub do_export{
     my ($ast, $schema) = @_;
 
+    my $node_id = $ast->id;
     if ($ast->is_literal){
         my $text = $ast->text;
-        return $text unless exists $schema->{hash}->{$text};
-        return $schema->{hash}->{$text}->($text) if $schema->{hash}->{$text} eq "CODE";
-        return $schema->{hash}->{$text};
+        # process literal text based on its node id
+        if ( my $node_id_proc = $schema->{$node_id} ) {
+            return $node_id_proc->($text) if ref $node_id_proc eq "CODE";
+            # constant
+            return $schema->{$node_id};
+        }
+        # no text processing
+        return $text;
     }
     else{
-        my $node_id = $ast->id;
         my $children = $ast->children;
         if (exists $schema->{hash}->{$node_id}){
 #            warn "hash: ", $ast->id;
@@ -578,7 +580,7 @@ sub do_export{
         elsif (exists $schema->{hash_item}->{$node_id}){
 #            warn "hash item: ", $ast->id;
             my ($key, $value) = @$children;
-            return $key->text => $value->do_export($schema);
+            return $key->do_export($schema) => $value->do_export($schema);
         }
         elsif (exists $schema->{array}->{$node_id}){
 #            warn "array: ", $ast->sprint;
@@ -610,7 +612,7 @@ sub do_export{
 #                warn "indexed array item";
                 my ($index, $value) = @$children;
                 return { 'indexed array item' =>
-                    { index => $index->text, value => $value->do_export($schema) }
+                    { index => $index->do_export($schema), value => $value->do_export($schema) }
                     };
             }
             elsif(@$children == 1){
