@@ -42,6 +42,8 @@ my $input = '4+5*6+8';
 
 my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
 
+# todo: find a place for this -- node_print for distill? also use ->text()
+=pod
 $ast->walk({
     visit => sub {
         my ($ast, $context) = @_;
@@ -49,6 +51,7 @@ $ast->walk({
         say ' ' x $context->{depth}, $node_id, $ast->is_literal ? qq{: $children[0]} : '';
     }
 });
+=cut
 
 #
 # evaluate ast as array of arrays with 0th element being the node id
