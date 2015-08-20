@@ -342,6 +342,7 @@ sub distill{
 
     my $class = ref $ast;
 
+    # duplicate root unless defined and set it as first parent
     my $root = $class->new( [ $opts->{root} //= $ast->id, @$ast[1..$CHILDREN_START-1] ] );
     my $skip_root = $root->id eq $ast->id;
     my $parents = [ $root ];
