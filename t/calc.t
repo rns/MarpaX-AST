@@ -61,6 +61,7 @@ $ast->walk({
 #
 sub ast_eval_AoA{
     my ($ast) = @_;
+    # binop
     if (@$ast == 4){
         my ($e1, $op, $e2) = @$ast[1..3];
         if    ($op eq '+'){ ast_eval_AoA($e1) + ast_eval_AoA($e2) }
@@ -69,22 +70,34 @@ sub ast_eval_AoA{
         elsif ($op eq '/'){ ast_eval_AoA($e1) / ast_eval_AoA($e2) }
         elsif ($op eq '**'){ ast_eval_AoA($e1) ** ast_eval_AoA($e2) }
     }
-    else{
+    # number
+    elsif (@$ast == 2 and $ast->[1]->[0] eq 'Number'){
         return $ast->[1]->[1];
     }
+    # parenthesized
+    elsif (@$ast == 2){
+        ast_eval_AoA($ast->[1]);
+    }
+    else{
+        die "Unknown node: " . $ast->sprint;
+    }
 }
-
-is ast_eval_AoA($ast), eval $input, "$input, ast_eval_AoA()";
 
 #
 # evaluate ast using MarpaX::AST methods
 #
 sub ast_eval{
     my ($ast) = @_;
+    # number
     if ($ast->id eq 'Expr' and $ast->first_child->id eq 'Number'){
-        return $ast->first_child->first_child;
+        return $ast->first_grandchild;
     }
-    else {
+    # parenthesized
+    elsif ($ast->children_count == 1 and $ast->first_child->id eq 'Expr'){
+        ast_eval($ast->first_child);
+    }
+    # binop
+    elsif ($ast->children_count == 3) {
         my ($e1, $op, $e2) = @{ $ast->children() };
         if    ($op eq '+'){ ast_eval($e1) + ast_eval($e2) }
         elsif ($op eq '-'){ ast_eval($e1) - ast_eval($e2) }
