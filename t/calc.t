@@ -51,7 +51,7 @@ $ast->walk({
     visit => sub {
         my ($ast, $context) = @_;
         my ($node_id, @children) = @$ast;
-        say ' ' x $context->{depth}, $node_id, $ast->is_literal ? qq{: $children[0]} : '';
+        say ' ' x $context->{depth}, $node_id, $ast->is_literal ? ": '" . $ast->text . "'" : '';
     }
 });
 =cut
