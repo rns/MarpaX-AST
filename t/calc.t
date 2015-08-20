@@ -185,13 +185,11 @@ whitespace ~ [\s]+
 END_OF_SOURCE
 } );
 
-my @inputs = qw{ 4+5*6+8 (4+5)*(6+8) (4+5)*(6+8)**12/5 };
-
-for my $inp (@inputs){
-    $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
+for my $input (@inputs){
+    my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
 #    warn $ast->sprint;
     my $v = My::Visitor->new();
-    is $v->visit($ast), eval $inp, "$inp, Visitor pattern";
+    is $v->visit($ast), eval $input, "$input, Visitor pattern";
 }
 
 #
