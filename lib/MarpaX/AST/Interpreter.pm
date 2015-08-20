@@ -35,8 +35,8 @@ sub new{
     bless $interpreter, $class;
 }
 
-sub context{ $_[0]->{context} }
-sub ctx { $_[0]->{context} }
+sub context{ $_[0]->{context}  or croak "Interpreter context nod defined." }
+sub ctx { $_[0]->{context} or croak "Interpreter context nod defined." }
 
 use vars qw($AUTOLOAD);
 

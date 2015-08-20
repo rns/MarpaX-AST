@@ -193,7 +193,7 @@ for my $input (@inputs){
 }
 
 #
-# evaluate ast using Interpreter pattern (context-free)
+# evaluate ast using Interpreter pattern (context-free: no variables in the grammar)
 #
 use_ok 'MarpaX::AST::Interpreter';
 
@@ -222,11 +222,11 @@ for my $input (@inputs){
 
 #    warn MarpaX::AST::dumper( $i->ast );
     is $i->cmpt($ast), # context-free interpreting :)
-        eval $inp, "$inp, Interpreter pattern (context-free)";
+        eval $input, "$input, Interpreter pattern (context-free)";
 }
 
 #
-# evaluate ast using Interpreter pattern (in context)
+# evaluate ast using Interpreter pattern (in context, with variables in the grammar)
 #
 $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 
@@ -234,6 +234,7 @@ $g = Marpa::R2::Scanless::G->new( { source => \(<<'END_OF_SOURCE'),
 lexeme default = action => [ name, value ] latm => 1
 
     Expr ::=
+          # expression is evaluated with variables substitution
           Var                                 name => 'var'
        || Number                              name => 'num'
        || ('(') Expr (')')  assoc => group    name => 'par'
@@ -255,7 +256,7 @@ END_OF_SOURCE
 package My::Expr::add;
 
 sub cmpt {
-    my (undef, $interp, $ast) = @_;
+    my (undef, $interp, $ast) = @_; # we use just the namespace, so no $self
     $interp->cmpt($ast->first_child) + $interp->cmpt($ast->last_child)
 }
 
@@ -267,27 +268,43 @@ sub My::Expr::pow::cmpt { $_[1]->cmpt($_[2]->first_child) ** $_[1]->cmpt($_[2]->
 sub My::Expr::num::cmpt { $_[2]->first_child->text }
 sub My::Expr::par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 
+# lookup the variable value by its name in the context
 sub My::Expr::var::cmpt{ $_[1]->ctx->{ $_[2]->first_child->text } }
+
+#
+# add a method to Visitor namespace to test visitor in context
+# with variables in the grammar
+#
+sub My::Visitor::visit_var{
+    my ($visitor, $ast) = @_;
+    # lookup the variable value by its name in the context
+    $visitor->ctx->{ $ast->first_child->text };
+}
 
 package main;
 
-@inputs = qw{   x-1+y*z    (x+y)*(a+b)    (a+b)*(x+y)**12/5   };
+@inputs = qw{   x-1+y*z    (x+y)*(a+b)    (a+b)*(x+y)**2/5   };
+
 my $context = { a => 42, b => 84, x => 1, y => 2, z => 3 };
 
-for my $inp (@inputs){
-    $ast = MarpaX::AST->new( ${ $g->parse( \$inp ) } );
+for my $input (@inputs){
+
+    my $subst = $input;
+    $subst =~ s/$_/$context->{$_}/g for keys %{ $context };
+
+    my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
 #    warn $ast->sprint;
 
     my $i = MarpaX::AST::Interpreter->new( {
-        namespace => 'My::Expr',
-        context => $context,
-    } );
+        namespace => 'My::Expr', context => $context } );
 
-    my $subst = $inp;
-    $subst =~ s/$_/$context->{$_}/g for keys %{ $context };
+    my $v = My::Visitor->new( { context => $context } );
 
     is $i->cmpt($ast), # contextual interpreting
-        eval $subst, "$inp, Interpreter pattern (in context)";
+        eval $subst, "$input, Interpreter pattern (in context)";
+
+    is $v->visit($ast), # contextual visiting
+        eval $subst, "$input, Visitor pattern (in context)";
 }
 
 done_testing();

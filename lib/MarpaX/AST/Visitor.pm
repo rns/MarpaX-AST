@@ -23,6 +23,7 @@ sub new {
     my $visitor = {};
     my $method_spec = {};
     while ( my ($method, $node_spec) = each %{$opts} ){
+        next if $method eq 'context';
 #        warn $method, $node_spec;
         if (ref $node_spec eq "ARRAY"){
             for my $node_id ( @{$node_spec} ){
@@ -37,8 +38,12 @@ sub new {
         }
     }
     $visitor->{method_spec} = $method_spec;
+    $visitor->{context} = $opts->{context};
     bless $visitor, $class;
 }
+
+sub context{ $_[0]->{context} or croak "Visitor context nod defined." }
+sub ctx{ $_[0]->{context} or croak "Visitor context nod defined." }
 
 sub visit{
     my ($visitor, $ast) = @_;
