@@ -2,7 +2,7 @@
 
 # Copyright 2015 Ruslan Shvedov
 
-# json decoding
+# json decoding using recursive functions, Visitor and Interpreter
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_json.t
 
 use 5.010;
@@ -13,43 +13,40 @@ use Test::More;
 
 use Marpa::R2;
 
+use JSON::PP;
+
 my $p = MarpaX::JSON->new;
 
-my $data = $p->parse_json(q${"test":"1"}$);
-is($data->{test}, 1);
+my $jsons = [
+    q${"test":"1"}$,
+    q${"test":[1,2,3]}$,
+    q${"test":true}$,
+    q${"test":false}$,
+    q${"test":null}$,
+    q${"test":null, "test2":"hello world"}$,
+    q${"test":"1.25"}$,
+    q${"test":"1.25e4"}$,
+    q$[]$,
+    q${}$,
+    q${"test":"1"}$,
+    q${ "test":  "\u2603" }$,
+];
 
-{
-    my $test = q${"test":[1,2,3]}$;
-    $data = $p->parse_json(q${"test":[1,2,3]}$);
-    is_deeply( $data->{test}, [ 1, 2, 3 ], $test );
+sub test_decode_json {
+    my ($parser, $input, $msg) = @_;
+    $msg //= $input;
+
+    my $decode_got      = $parser->parse_json($input);
+    my $decode_expected = decode_json($input);
+
+    is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode};
 }
 
-$data = $p->parse_json(q${"test":true}$);
-is($data->{test}, 1);
+for my $json (@$jsons){
+    test_decode_json($p, $json);
+}
 
-$data = $p->parse_json(q${"test":false}$);
-is($data->{test}, '');
-
-$data = $p->parse_json(q${"test":null}$);
-is($data->{test}, undef);
-
-$data = $p->parse_json(q${"test":null, "test2":"hello world"}$);
-is($data->{test}, undef);
-is($data->{test2}, "hello world");
-
-$data = $p->parse_json(q${"test":"1.25"}$);
-is($data->{test}, '1.25', '1.25');
-
-$data = $p->parse_json(q${"test":"1.25e4"}$);
-is($data->{test}, '1.25e4', '1.25e4');
-
-$data = $p->parse_json(q$[]$);
-is_deeply($data, [], '[]');
-
-$data = $p->parse_json(q${}$);
-is_deeply($data, {}, '{}');
-
-$data = $p->parse_json(<<'JSON');
+my $json = (<<'JSON');
 [
       {
          "precision": "zip",
@@ -64,7 +61,7 @@ $data = $p->parse_json(<<'JSON');
       {
          "precision": "zip",
          "Latitude":  37.371991,
-         "Longitude": -122.026020,
+         "Longitude": -122.02602,
          "Address":   "",
          "City":      "SUNNYVALE",
          "State":     "CA",
@@ -73,16 +70,9 @@ $data = $p->parse_json(<<'JSON');
       }
 ]
 JSON
-is_deeply($data, [
-    { "precision"=>"zip", Latitude => "37.7668", Longitude=>"-122.3959",
-      "Country" => "US", Zip => 94107, Address => '',
-      City => "SAN FRANCISCO", State => 'CA' },
-    { "precision" => "zip", Longitude => "-122.026020", Address => "",
-      City => "SUNNYVALE", Country => "US", Latitude => "37.371991",
-      Zip => 94085, State => "CA" }
-], 'Geo data');
+test_decode_json ($p, $json, 'Geo data');
 
-$data = $p->parse_json(<<'JSON');
+$json = (<<'JSON');
 {
     "Image": {
         "Width":  800,
@@ -97,20 +87,9 @@ $data = $p->parse_json(<<'JSON');
     }
 }
 JSON
-is_deeply($data, {
-    "Image" => {
-        "Width" => 800, "Height" => 600,
-        "Title" => "View from 15th Floor",
-        "Thumbnail" => {
-            "Url" => "http://www.example.com/image/481989943",
-            "Height" => 125,
-            "Width" => 100,
-        },
-        "IDs" => [ 116, 943, 234, 38793 ],
-    }
-}, 'is_deeply test');
+test_decode_json ($p, $json, 'Geo data');
 
-my $big_test = <<'JSON';
+$json = <<'JSON';
 {
     "source" : "<a href=\"http://janetter.net/\" rel=\"nofollow\">Janetter</a>",
     "entities" : {
@@ -147,54 +126,7 @@ my $big_test = <<'JSON';
     }
 }
 JSON
-$data = $p->parse_json($big_test);
-
-is_deeply $data, eval q{
-{
-  'source' => '<a href="http://janetter.net/" rel="nofollow">Janetter</a>',
-  'geo' => {},
-  'in_reply_to_user_id_str' => '61233',
-  'id_str' => '281405942321532929',
-  'entities' => {
-                  'hashtags' => [],
-                  'media' => [],
-                  'user_mentions' => [
-                                       {
-                                         'name' => 'James Governor',
-                                         'id' => '61233',
-                                         'id_str' => '61233',
-                                         'indices' => [
-                                                        '0',
-                                                        '10'
-                                                      ],
-                                         'screen_name' => 'moankchips'
-                                       }
-                                     ],
-                  'urls' => []
-                },
-  'created_at' => 'Wed Dec 19 14:29:39 +0000 2012',
-  'in_reply_to_status_id_str' => '281400879465238529',
-  'text' => '@monkchips Ouch. Some regrets are harsher than others.',
-  'user' => {
-              'protected' => '',
-              'name' => 'Sarah Bourne',
-              'verified' => '',
-              'id' => '16010789',
-              'id_str' => '16010789',
-              'profile_image_url_https' => 'https://si0.twimg.com/profile_images/638441870/Snapshot-of-sb_normal.jpg',
-              'screen_name' => 'sarahebourne'
-            },
-  'in_reply_to_user_id' => '61233',
-  'id' => '281405942321532929',
-  'in_reply_to_status_id' => '281400879465238529',
-  'in_reply_to_screen_name' => 'monkchips'
-}
-}, "big test";
-
-$data = $p->parse_json(<<'JSON');
-{ "test":  "\u2603" }
-JSON
-is($data->{test}, "\x{2603}", 'Unicode char');
+test_decode_json ($p, $json, 'big test');
 
 done_testing();
 
@@ -326,8 +258,9 @@ sub decode {
     }
     else
     {
-        if ($ast eq 'true' or $ast eq 'false'){ return $ast eq 'true' }
-        elsif ($ast eq 'null' ){ return undef }
+        if ($ast eq 'true')    { bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' ) }
+        elsif ($ast eq 'false'){ bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' ) }
+        elsif ($ast eq 'null' ){ undef }
         else { warn "unknown scalar <$ast>"; return $ast }
     }
 }
