@@ -299,6 +299,7 @@ sub decode_string {
 package My::Visitor;
 use parent 'MarpaX::AST::Visitor';
 
+
 package My::Interpreter;
 use parent 'MarpaX::AST::Interpreter';
 

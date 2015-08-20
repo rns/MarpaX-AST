@@ -75,15 +75,14 @@ sub AUTOLOAD{
             }
         }
     }
+
     # default package
     $package //= $interpreter->{namespace} . '::' . $node_id;
     croak "Package $package isn't loaded." unless defined *{$package . '::'};
-
 #    warn $package;
 
     my $method = (split /::/, $AUTOLOAD)[-1];
     croak "Method $method not defined in package $package." unless $package->can($method);
-
 #    warn $method;
 
     $level++;
@@ -92,5 +91,9 @@ sub AUTOLOAD{
 
     return $result;
 }
+
+# required to avoid errors "in cleanup" under some perls
+# see http://www.perlmonks.org/bare/?node_id=93037
+sub DESTROY { }
 
 1;
