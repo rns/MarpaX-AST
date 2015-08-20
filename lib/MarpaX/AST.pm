@@ -562,10 +562,13 @@ sub do_export{
     my $node_id = $ast->id;
     if ($ast->is_literal){
         my $text = $ast->text;
+#        warn qq{$node_id, $text, $schema->{$node_id}};
         # process literal text based on its node id
-        if ( my $node_id_proc = $schema->{$node_id} ) {
+        if ( exists $schema->{$node_id} ) { # can be false or undef (e.g., json)
+            my $node_id_proc = $schema->{$node_id};
             return $node_id_proc->($text) if ref $node_id_proc eq "CODE";
             # constant
+#            warn q{constant};
             return $schema->{$node_id};
         }
         # no text processing
