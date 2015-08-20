@@ -8,10 +8,11 @@ use strict;
 use Test::More;
 
 if (not eval { require MarpaX::AST; 1; }) {
-    Test::More::diag($@);
-    Test::More::BAIL_OUT('Could not load MarpaX::AST');
+    diag($@);
+    BAIL_OUT('Could not load MarpaX::AST');
 }
-
-use_ok 'MarpaX::AST';
+else{
+    ok 1
+}
 
 done_testing();

@@ -20,8 +20,8 @@ use Marpa::R2;
 
 use JSON::PP; # to avoid eval()'ing data structures in decoding tests
 
-use_ok 'MarpaX::AST';
-use_ok 'MarpaX::AST::Discardables';
+require MarpaX::AST;
+require MarpaX::AST::Discardables;
 
 sub test_decode_json {
     my ($parser, $input, $msg) = @_;

@@ -13,8 +13,8 @@ use Test::Differences;
 
 use Marpa::R2;
 
-require_ok 'MarpaX::AST';
-require_ok 'MarpaX::AST::Interpreter';
+require MarpaX::AST;
+require MarpaX::AST::Interpreter;
 
 my $prove = $ENV{HARNESS_ACTIVE};
 

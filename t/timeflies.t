@@ -14,9 +14,9 @@ use Test::Differences;
 
 use Marpa::R2;
 
-require_ok 'MarpaX::AST';
-require_ok 'MarpaX::AST::Visitor';
-require_ok 'MarpaX::AST::Interpreter';
+require MarpaX::AST;
+require MarpaX::AST::Visitor;
+require MarpaX::AST::Interpreter;
 
 my $grammar = Marpa::R2::Scanless::G->new({ source => \(<<'END_OF_SOURCE'),
 

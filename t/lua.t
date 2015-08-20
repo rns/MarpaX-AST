@@ -12,7 +12,7 @@ use Marpa::R2;
 
 use Carp::Always;
 
-require_ok 'MarpaX::AST';
+require MarpaX::AST;
 
 my $parser_module_dir;
 my $cwd;
@@ -31,7 +31,7 @@ BEGIN{
 
 # todo: loosen the dep on Lua::AST
 use lib qq{$parser_module_dir/lib};
-use_ok 'MarpaX::Languages::Lua::AST';
+require MarpaX::Languages::Lua::AST;
 
 sub slurp_file{
     my ($fn) = @_;

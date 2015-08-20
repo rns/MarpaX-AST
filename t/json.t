@@ -14,9 +14,9 @@ use Test::More;
 use Marpa::R2;
 use JSON::PP;
 
-require_ok 'MarpaX::AST';
-require_ok 'MarpaX::AST::Visitor';
-require_ok 'MarpaX::AST::Interpreter';
+require MarpaX::AST;
+require MarpaX::AST::Visitor;
+require MarpaX::AST::Interpreter;
 
 my $p = MarpaX::JSON->new;
 
@@ -295,5 +295,11 @@ sub decode_string {
 
     return $s;
 } ## end sub decode_string
+
+package My::Visitor;
+use parent 'MarpaX::AST::Visitor';
+
+package My::Interpreter;
+use parent 'MarpaX::AST::Interpreter';
 
 1;

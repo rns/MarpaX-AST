@@ -9,9 +9,9 @@ use Test::More;
 
 use Marpa::R2;
 
-require_ok 'MarpaX::AST';
-require_ok 'MarpaX::AST::Visitor';
-require_ok 'MarpaX::AST::Interpreter';
+require MarpaX::AST;
+require MarpaX::AST::Visitor;
+require MarpaX::AST::Interpreter;
 
 my $dumper = \&MarpaX::AST::dumper;
 
