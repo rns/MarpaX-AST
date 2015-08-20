@@ -1,8 +1,9 @@
+# Copyright 2015 Ruslan Shvedov
 package MarpaX::AST::Visitor;
 
+use 5.010;
 use strict;
 use warnings;
-use 5.010;
 
 use Carp;
 

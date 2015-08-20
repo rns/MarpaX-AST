@@ -12,8 +12,11 @@ use warnings;
 use Test::More;
 
 use Marpa::R2;
-
 use JSON::PP;
+
+use_ok 'MarpaX::AST';
+use_ok 'MarpaX::AST::Visitor';
+use_ok 'MarpaX::AST::Interpreter';
 
 my $p = MarpaX::JSON->new;
 
@@ -33,20 +36,20 @@ my $jsons = [
 ];
 
 sub test_decode_json {
-    my ($parser, $input, $msg) = @_;
+    my ($parser, $input, $type, $msg) = @_;
     $msg //= $input;
 
-    my $decode_got      = $parser->parse_json($input);
+    my $decode_got      = $parser->decode($input, $type);
     my $decode_expected = decode_json($input);
 
-    is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode};
+    is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode $type};
 }
 
 for my $json (@$jsons){
-    test_decode_json($p, $json);
+    test_decode_json($p, $json, 'AoA');
 }
 
-my $json = (<<'JSON');
+my $json = <<'JSON';
 [
       {
          "precision": "zip",
@@ -70,9 +73,9 @@ my $json = (<<'JSON');
       }
 ]
 JSON
-test_decode_json ($p, $json, 'Geo data');
+test_decode_json ($p, $json, 'AoA', 'Geo data');
 
-$json = (<<'JSON');
+$json = <<'JSON';
 {
     "Image": {
         "Width":  800,
@@ -87,7 +90,7 @@ $json = (<<'JSON');
     }
 }
 JSON
-test_decode_json ($p, $json, 'Geo data');
+test_decode_json ($p, $json, 'AoA', 'Geo data');
 
 $json = <<'JSON';
 {
@@ -126,7 +129,7 @@ $json = <<'JSON';
     }
 }
 JSON
-test_decode_json ($p, $json, 'big test');
+test_decode_json ($p, $json, 'AoA', 'big test');
 
 done_testing();
 
@@ -216,10 +219,17 @@ sub parse {
     );
     $re->read( \$string );
     my $ast = ${ $re->value() };
-    return $parser->decode ( $ast );
 } ## end sub parse
 
-sub decode {
+
+sub decode{
+    my ( $parser, $string, $type ) = @_;
+    my $ast = MarpaX::AST->new( $parser->parse($string) );
+    my $method = "decode_$type";
+    return $parser->$method( $ast );
+}
+
+sub decode_AoA {
     my $parser = shift;
 
     my $ast  = shift;
@@ -227,16 +237,16 @@ sub decode {
     if (ref $ast){
         my ($id, @nodes) = @$ast;
         if ($id eq 'json'){
-            $parser->decode(@nodes);
+            $parser->decode_AoA(@nodes);
         }
         elsif ($id eq 'members'){
-            return { map { $parser->decode($_) } @nodes };
+            return { map { $parser->decode_AoA($_) } @nodes };
         }
         elsif ($id eq 'pair'){
-            return map { $parser->decode($_) } @nodes;
+            return map { $parser->decode_AoA($_) } @nodes;
         }
         elsif ($id eq 'elements'){
-            return [ map { $parser->decode($_) } @nodes ];
+            return [ map { $parser->decode_AoA($_) } @nodes ];
         }
         elsif ($id eq 'string'){
             return decode_string( substr $nodes[0]->[1], 1, -1 );
@@ -246,14 +256,14 @@ sub decode {
         }
         elsif ($id eq 'object'){
             return {} unless @nodes;
-            return $parser->decode($_) for @nodes;
+            return $parser->decode_AoA($_) for @nodes;
         }
         elsif ($id eq 'array'){
             return [] unless @nodes;
-            return $parser->decode($_) for @nodes;
+            return $parser->decode_AoA($_) for @nodes;
         }
         else{
-            return $parser->decode($_) for @nodes;
+            return $parser->decode_AoA($_) for @nodes;
         }
     }
     else

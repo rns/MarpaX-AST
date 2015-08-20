@@ -2,7 +2,7 @@
 
 # Copyright 2015 Ruslan Shvedov
 
-# json roundtripping and decoding by export
+# json roundtripping and decoding with export() method
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_json.t
 
 # requirements to grammar for round-trip parsers

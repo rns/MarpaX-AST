@@ -1,8 +1,9 @@
+# Copyright 2015 Ruslan Shvedov
 package MarpaX::AST::Interpreter;
 
+use 5.010;
 use strict;
 use warnings;
-use 5.010;
 
 use Carp;
 
@@ -42,10 +43,11 @@ use vars qw($AUTOLOAD);
 
 sub AUTOLOAD{
     my ($interpreter, $ast, @tail) = @_;
+
     croak "Arg 1 must be a MarpaX::AST::Interpreter, not $interpreter." unless $interpreter->isa('MarpaX::AST::Interpreter');
     croak "Arg 2 must be a MarpaX::AST, not $ast." unless $ast->isa('MarpaX::AST');
 
-#    warn $AUTOLOAD;
+#    warn "# autoload: ", $AUTOLOAD unless $AUTOLOAD =~ m{cmpt$};
 
     state $level = 0; # todo: check if $ast is root?
     my $context = $interpreter->{context};

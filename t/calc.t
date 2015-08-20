@@ -10,6 +10,8 @@ use Test::More;
 use Marpa::R2;
 
 use_ok 'MarpaX::AST';
+use_ok 'MarpaX::AST::Visitor';
+use_ok 'MarpaX::AST::Interpreter';
 
 my $dumper = \&MarpaX::AST::dumper;
 
@@ -118,7 +120,6 @@ for my $input (@inputs){
 #
 # evaluate ast using Visitor pattern ($v is for visitor)
 #
-use_ok 'MarpaX::AST::Visitor';
 
 package My::Visitor;
 
@@ -195,7 +196,6 @@ for my $input (@inputs){
 #
 # evaluate ast using Interpreter pattern (context-free: no variables in the grammar)
 #
-use_ok 'MarpaX::AST::Interpreter';
 
 sub add::cmpt {
     my (undef, $interp, $ast) = @_;
