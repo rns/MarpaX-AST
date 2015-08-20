@@ -2,7 +2,7 @@
 
 # Copyright 2015 Ruslan Shvedov
 
-# json roundtripping and decoding
+# json roundtripping and decoding by export
 # based on: https://github.com/jeffreykegler/Marpa--R2/blob/master/cpan/t/sl_json.t
 
 # requirements to grammar for round-trip parsers
@@ -14,11 +14,33 @@ use strict;
 use warnings;
 
 use Test::More;
+use Test::Differences;
 
 use Marpa::R2;
 
+use JSON::PP; # to avoid eval()'ing data structures in decoding tests
+
 use_ok 'MarpaX::AST';
 use_ok 'MarpaX::AST::Discardables';
+
+sub test_decode_json {
+    my ($parser, $input, $msg) = @_;
+    $msg //= $input;
+
+    my $decode_got      = $parser->decode_json($input);
+    my $decode_expected = decode_json($input);
+
+    unless (is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode}){
+        warn $parser->ast->sprint;
+        warn MarpaX::AST::dumper($decode_got, $decode_expected);
+    }
+}
+
+sub test_roundtrip_json{
+    my ($parser, $input, $desc) = @_;
+    eq_or_diff $parser->roundtrip_json($input), $input,
+        join ' ', $desc, q{roundtrip};
+}
 
 my $p = MarpaX::JSON->new;
 
@@ -38,8 +60,8 @@ my $json_one_liners = [
 ];
 
 for my $json_one_liner (@$json_one_liners){
-    is $p->roundtrip_json($json_one_liner), $json_one_liner, $json_one_liner;
-    warn MarpaX::AST::dumper($p->decode_json($json_one_liner));
+    test_roundtrip_json( $p, $json_one_liner, $json_one_liner);
+    test_decode_json($p, $json_one_liner);
 }
 
 # http://stackoverflow.com/questions/32110156/parsing-complex-json-in-php
@@ -69,7 +91,8 @@ my $complex_json = <<END;
     }
 }
 END
-warn MarpaX::AST::dumper($p->decode_json($complex_json));
+test_roundtrip_json( $p, $complex_json, 'complex json (SO)');
+test_decode_json($p, $complex_json, "complex json (SO)");
 
 my $locations = <<JSON;
 [
@@ -86,7 +109,7 @@ my $locations = <<JSON;
       {
          "precision": "zip",
          "Latitude":  37.371991,
-         "Longitude": -122.026020,
+         "Longitude": -122.02602,
          "Address":   "",
          "City":      "SUNNYVALE",
          "State":     "CA",
@@ -96,8 +119,8 @@ my $locations = <<JSON;
 ]
 JSON
 
-is $p->roundtrip_json($locations), $locations, "locations";
-warn MarpaX::AST::dumper($p->decode_json($locations));
+test_roundtrip_json( $p, $locations, "locations");
+test_decode_json($p, $locations, "locations");
 
 my $image = <<'JSON';
 # this is a hash comment to image json file test
@@ -117,7 +140,7 @@ my $image = <<'JSON';
 // c++ style comment at the end
 JSON
 
-is $p->roundtrip_json($image), $image, "image";
+test_roundtrip_json($p, $image, "image");
 
 my $big_test = <<'JSON';
 // This is c++ style comment to janetter.net json test
@@ -159,7 +182,7 @@ my $big_test = <<'JSON';
 }
 JSON
 
-is $p->roundtrip_json($big_test), $big_test, "janetter.net";
+test_roundtrip_json($p, $big_test, "janetter.net");
 
 # https://commentjson.readthedocs.org/en/latest/
 my $commentjson = <<JSON;
@@ -177,7 +200,7 @@ my $commentjson = <<JSON;
 }
 JSON
 
-is $p->roundtrip_json($commentjson), $commentjson, "commentjson";
+test_roundtrip_json($p, $commentjson, "commentjson");
 
 # https://github.com/Dynalon/JsonConfig/blob/master/JsonConfig.Tests/JSON/Arrays.json
 my $jsonconfig = <<'JSON';
@@ -219,7 +242,7 @@ my $jsonconfig = <<'JSON';
 }
 JSON
 
-is $p->roundtrip_json($jsonconfig), $jsonconfig, "Dynalon/JsonConfig";
+test_roundtrip_json($p, $jsonconfig, "Dynalon/JsonConfig");
 
 # https://code.google.com/p/orthanc/source/browse/Resources/Configuration.json
 my $orthanc_config = <<JSON;
@@ -461,8 +484,8 @@ my $orthanc_config = <<JSON;
 }
 JSON
 
-is $p->roundtrip_json($orthanc_config), $orthanc_config,
-    "heavily commented real-life example from orthanc";
+test_roundtrip_json($p, $orthanc_config,
+    "heavily commented real-life example from orthanc");
 
 # https://gist.github.com/etrepat/1289965
 my $sublimetext2 = <<JSON;
@@ -652,8 +675,7 @@ my $sublimetext2 = <<JSON;
 JSON
 #'
 
-is $p->roundtrip_json($sublimetext2), $sublimetext2,
-    "Sublime Text 2 settings";
+test_roundtrip_json($p, $sublimetext2, "Sublime Text 2 settings");
 
 # https://github.com/ether/etherpad-lite/wiki/Example-Production-Settings.JSON
 
@@ -727,8 +749,7 @@ my $etherpad_lite = <<JSON;
 }
 JSON
 
-is $p->roundtrip_json($etherpad_lite), $etherpad_lite,
-    "etherpad-lite settings";
+test_roundtrip_json($p, $etherpad_lite, "etherpad-lite settings");
 
 done_testing();
 
@@ -847,6 +868,8 @@ END_OF_SOURCE
     return $parser;
 }
 
+sub ast { $_[0]->{ast} }
+
 sub parse {
     my ( $parser, $json ) = @_;
 
@@ -894,17 +917,18 @@ sub export {
         skip => [qw{ members elements value comma colon string },
             'left curly', 'left square', 'right curly', 'right square' ]
     });
-    warn $ast->sprint;
+
+    $parser->{ast} = $ast;
+
     return $ast->export({
         hash       => [qw{ object }],
         hash_item  => [qw{ pair }],
         array      => [qw{ array }],
-#        array_item => [qw{ object }],
         # literals
-        true    => 1 == 1,
-        false   => 0 == 1,
-        null    => undef,
-        lstring => sub { substr $_[0], 1, length($_[0])-2 } # remove quotes
+        true    => bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' ),
+        false   => bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' ),
+        null    => do{my $o = undef},
+        lstring => sub { decode_string(substr $_[0], 1, length($_[0])-2) } # remove quotes
     });
 }
 
@@ -912,7 +936,9 @@ sub export {
 
 sub decode_json {
     my ($parser, $input) = @_;
-    return $parser->export( MarpaX::AST->new( $parser->parse($input) ) );
+    my $ast = MarpaX::AST->new( $parser->parse($input) );
+    $parser->{ast} = $ast;
+    return $parser->export( $ast );
 }
 
 sub roundtrip_json {
