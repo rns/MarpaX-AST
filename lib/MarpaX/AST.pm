@@ -358,8 +358,9 @@ sub distill{
             ref $opts->{skip} eq 'ARRAY' ? sub {
                 my ($ast) = @_;
                 my ($node_id) = @$ast;
-                state $skip = { map { $_ => 1 }
-                    @{ $opts->{skip} }, $skip_root ? $root->id : undef };
+                my @skip_node_ids = @{ $opts->{skip} };
+                push @skip_node_ids, $root->id if $skip_root;
+                state $skip = { map { $_ => 1 } @skip_node_ids };
                 return exists $skip->{ $node_id }
             } : $opts->{skip},
         visit => sub {
