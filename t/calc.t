@@ -253,7 +253,20 @@ whitespace ~ [\s]+
 END_OF_SOURCE
 } );
 
+#
+# add a method to Visitor namespace to test visitor in context
+# with variables in the grammar
+#
+sub My::Visitor::visit_var{
+    my ($visitor, $ast) = @_;
+    # lookup the variable value by its name in the context
+    $visitor->ctx->{ $ast->first_child->text };
+}
+
 package My::Expr::add;
+
+# use custom namespace for interpreter; we could just add
+# a method for variable lookup as with My::Visitor above
 
 sub cmpt {
     my (undef, $interp, $ast) = @_; # we use just the namespace, so no $self
@@ -271,16 +284,6 @@ sub My::Expr::par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 # lookup the variable value by its name in the context
 sub My::Expr::var::cmpt{ $_[1]->ctx->{ $_[2]->first_child->text } }
 
-#
-# add a method to Visitor namespace to test visitor in context
-# with variables in the grammar
-#
-sub My::Visitor::visit_var{
-    my ($visitor, $ast) = @_;
-    # lookup the variable value by its name in the context
-    $visitor->ctx->{ $ast->first_child->text };
-}
-
 package main;
 
 @inputs = qw{   x-1+y*z    (x+y)*(a+b)    (a+b)*(x+y)**2/5   };
@@ -289,22 +292,20 @@ my $context = { a => 42, b => 84, x => 1, y => 2, z => 3 };
 
 for my $input (@inputs){
 
+    # substitute variables to produce expected value
     my $subst = $input;
     $subst =~ s/$_/$context->{$_}/g for keys %{ $context };
 
     my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
-#    warn $ast->sprint;
 
-    my $i = MarpaX::AST::Interpreter->new( {
-        namespace => 'My::Expr', context => $context } );
+    # contextual interpreting
+    my $i = MarpaX::AST::Interpreter->new(
+        { namespace => 'My::Expr', context => $context } );
+    is $i->cmpt($ast), eval $subst, "$input, Interpreter pattern (in context)";
 
+    # contextual visiting
     my $v = My::Visitor->new( { context => $context } );
-
-    is $i->cmpt($ast), # contextual interpreting
-        eval $subst, "$input, Interpreter pattern (in context)";
-
-    is $v->visit($ast), # contextual visiting
-        eval $subst, "$input, Visitor pattern (in context)";
+    is $v->visit($ast), eval $subst, "$input, Visitor pattern (in context)";
 }
 
 done_testing();
