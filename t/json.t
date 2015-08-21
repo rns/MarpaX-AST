@@ -42,7 +42,9 @@ sub test_decode_json {
     my $decode_got      = $parser->decode($input, $type);
     my $decode_expected = decode_json($input);
 
-    is_deeply $decode_got, $decode_expected, join ' ', $msg, q{decode $type};
+    unless (is_deeply $decode_got, $decode_expected, join ' ', $msg, qq{decode_$type}){
+        warn MarpaX::AST::dumper($decode_got);
+    }
 }
 
 for my $json (@$jsons){
@@ -135,6 +137,11 @@ test_decode_json ($p, $json, 'AoA_traversal', 'big test');
 done_testing();
 
 package MarpaX::JSON;
+
+use strict;
+use warnings;
+
+use Carp;
 
 sub new {
 
@@ -233,44 +240,59 @@ sub decode{
 sub decode_with_Visitor{
     my ($parser, $ast) = @_;
 
-    my $v = JSON::Decoding::Visitor->new();
-    warn $ast->sprint;
-    return $v->visit($ast);
+    my $always_skip = { map { $_ => 1 } qw{ members elements string pair } };
+
+    $ast = $ast->distill({
+        root => 'json',
+        skip => sub {
+            my ($ast) = @_;
+            my $node_id = $ast->id;
+            return 1 if exists $always_skip->{$node_id};
+            return 1 if $node_id eq 'value' and not $ast->is_literal;
+            return 0;
+        }
+    });
+
+    my $v = My::JSON::Decoding::Visitor->new();
+#    warn $ast->sprint;
+    my $decoded = $v->visit($ast);
+#    warn MarpaX::AST::dumper($decoded->[0]->[0]);
+    return $decoded->[0]->[0];
 }
 
 sub decode_AoA_traversal {
     my ($parser, $ast) = @_;
 
     if (ref $ast){
-        my ($id, @nodes) = @$ast;
+        my ($id, @children) = @$ast;
         if ($id eq 'json'){
-            $parser->decode_AoA_traversal(@nodes);
+            $parser->decode_AoA_traversal(@children);
         }
         elsif ($id eq 'members'){
-            return { map { $parser->decode_AoA_traversal($_) } @nodes };
+            return { map { $parser->decode_AoA_traversal($_) } @children };
         }
         elsif ($id eq 'pair'){
-            return map { $parser->decode_AoA_traversal($_) } @nodes;
+            return map { $parser->decode_AoA_traversal($_) } @children;
         }
         elsif ($id eq 'elements'){
-            return [ map { $parser->decode_AoA_traversal($_) } @nodes ];
+            return [ map { $parser->decode_AoA_traversal($_) } @children ];
         }
         elsif ($id eq 'string'){
-            return decode_string( substr $nodes[0]->[1], 1, -1 );
+            return decode_string( substr $children[0]->[1], 1, -1 );
         }
         elsif ($id eq 'number'){
-            return $nodes[0];
+            return $children[0];
         }
         elsif ($id eq 'object'){
-            return {} unless @nodes;
-            return $parser->decode_AoA_traversal($_) for @nodes;
+            return {} unless @children;
+            return $parser->decode_AoA_traversal(@children);
         }
         elsif ($id eq 'array'){
-            return [] unless @nodes;
-            return $parser->decode_AoA_traversal($_) for @nodes;
+            return [] unless @children;
+            return $parser->decode_AoA_traversal(@children);
         }
         else{
-            return $parser->decode_AoA_traversal($_) for @nodes;
+            return $parser->decode_AoA_traversal(@children);
         }
     }
     else
@@ -278,7 +300,7 @@ sub decode_AoA_traversal {
         if ($ast eq 'true')    { bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' ) }
         elsif ($ast eq 'false'){ bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' ) }
         elsif ($ast eq 'null' ){ undef }
-        else { warn "unknown scalar <$ast>"; return $ast }
+        else { croak "unknown scalar <$ast>"; return $ast }
     }
 }
 
@@ -303,10 +325,66 @@ sub decode_string {
     return $s;
 } ## end sub decode_string
 
-package JSON::Decoding::Visitor;
+package My::JSON::Decoding::Visitor;
+
+use strict;
+use warnings;
+use Carp;
+
 use parent 'MarpaX::AST::Visitor';
 
-package JSON::Decoding::Interpreter;
+# no passthrough visitors: each visitor must return a scalar or ref to array or hash
+
+sub visit_value {
+    my ($visitor, $ast) = @_;
+
+#    warn $ast->sprint;
+
+    if ($ast->is_literal){ # true, null, false
+        if ($ast->text eq 'true'){
+            return bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' )
+        }
+        elsif ($ast->text eq 'false'){
+            return bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' )
+        }
+        elsif ($ast->text eq 'null'){
+            return undef;
+        }
+        return $ast->text;
+    }
+
+    $ast = $ast->first_child;
+    my $node_id = $ast->id;
+#    warn "#value type: $node_id";
+
+    if ($node_id eq 'string'){ return $visitor->generic_visit($ast) }
+    elsif ($node_id eq 'number') { return $ast->text }
+    elsif ($node_id eq 'object') { return $visitor->generic_visit($ast) }
+    elsif ($node_id eq 'array')  { return $visitor->generic_visit($ast) }
+
+#    warn "generic value", $ast->id;
+
+    return [ map { $visitor->visit($_) } @{$ast->children} ];
+}
+
+sub generic_visit{
+    my ($visitor, $ast) = @_;
+#    warn "# generic:\n", $ast->sprint;
+    if ($ast->is_literal){
+        if ($ast->id eq 'lstring') {
+            my $contents = $ast->text;
+            return MarpaX::JSON::decode_string(
+                substr( $contents, 1, length($contents) - 2) );
+        }
+        return $ast->text;
+    }
+    return { map { $visitor->visit($_) } @{$ast->children} } if $ast->id eq 'object';
+    return [ map { $visitor->visit($_) } @{$ast->children} ] if $ast->id eq 'array';
+    die "must be json: " unless $ast->id eq 'json';
+    return [ map { $visitor->visit($_) } @{$ast->children} ];
+}
+
+package My::JSON::Decoding::Interpreter;
 use parent 'MarpaX::AST::Interpreter';
 
 1;
