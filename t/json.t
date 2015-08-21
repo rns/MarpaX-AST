@@ -337,9 +337,6 @@ use parent 'MarpaX::AST::Visitor';
 
 sub visit_value {
     my ($visitor, $ast) = @_;
-
-#    warn $ast->sprint;
-
     if ($ast->is_literal){ # true, null, false
         if ($ast->text eq 'true'){
             return bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' )
@@ -352,35 +349,32 @@ sub visit_value {
         }
         return $ast->text;
     }
-
-    $ast = $ast->first_child;
-    my $node_id = $ast->id;
-#    warn "#value type: $node_id";
-
-    if ($node_id eq 'string'){ return $visitor->generic_visit($ast) }
-    elsif ($node_id eq 'number') { return $ast->text }
-    elsif ($node_id eq 'object') { return $visitor->generic_visit($ast) }
-    elsif ($node_id eq 'array')  { return $visitor->generic_visit($ast) }
-
-#    warn "generic value", $ast->id;
-
-    return [ map { $visitor->visit($_) } @{$ast->children} ];
 }
 
-sub generic_visit{
+sub visit_object{
     my ($visitor, $ast) = @_;
-#    warn "# generic:\n", $ast->sprint;
-    if ($ast->is_literal){
-        if ($ast->id eq 'lstring') {
-            my $contents = $ast->text;
-            return MarpaX::JSON::decode_string(
-                substr( $contents, 1, length($contents) - 2) );
-        }
-        return $ast->text;
-    }
-    return { map { $visitor->visit($_) } @{$ast->children} } if $ast->id eq 'object';
-    return [ map { $visitor->visit($_) } @{$ast->children} ] if $ast->id eq 'array';
-    die "must be json: " unless $ast->id eq 'json';
+    return { map { $visitor->visit($_) } @{$ast->children} }
+}
+
+sub visit_array{
+    my ($visitor, $ast) = @_;
+    return [ map { $visitor->visit($_) } @{$ast->children} ]
+}
+
+sub visit_lstring{
+    my ($visitor, $ast) = @_;
+    my $contents = $ast->text;
+    return MarpaX::JSON::decode_string(
+        substr( $contents, 1, length($contents) - 2) );
+}
+
+sub visit_number{
+    my ($visitor, $ast) = @_;
+    return $ast->text;
+}
+
+sub visit_json{
+    my ($visitor, $ast) = @_;
     return [ map { $visitor->visit($_) } @{$ast->children} ];
 }
 
