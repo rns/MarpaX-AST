@@ -243,7 +243,6 @@ sub decode_with_Visitor{
     my $always_skip = { map { $_ => 1 } qw{ members elements string pair } };
 
     $ast = $ast->distill({
-        root => 'json',
         skip => sub {
             my ($ast) = @_;
             my $node_id = $ast->id;
@@ -256,7 +255,7 @@ sub decode_with_Visitor{
     my $v = My::JSON::Decoding::Visitor->new();
 #    warn $ast->sprint;
     my $decoded = $v->visit($ast);
-#    warn MarpaX::AST::dumper($decoded->[0]->[0]);
+    warn MarpaX::AST::dumper($decoded);
     return $decoded->[0]->[0];
 }
 
@@ -333,21 +332,17 @@ use Carp;
 
 use parent 'MarpaX::AST::Visitor';
 
-# no passthrough visitors: each visitor must return a scalar or ref to array or hash
+# todo: put this in the doc: passthrough visitors:
+# each visitor must return a scalar or ref to array or hash
+# so the ast must be distilled appropriately
 
 sub visit_value {
     my ($visitor, $ast) = @_;
-    if ($ast->is_literal){ # true, null, false
-        if ($ast->text eq 'true'){
-            return bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' )
-        }
-        elsif ($ast->text eq 'false'){
-            return bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' )
-        }
-        elsif ($ast->text eq 'null'){
-            return undef;
-        }
-        return $ast->text;
+    if    ($ast->text eq 'true') { bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' ) }
+    elsif ($ast->text eq 'false'){ bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' ) }
+    elsif ($ast->text eq 'null') { undef }
+    else{
+        croak "unknown literal: ", $ast->sprint;
     }
 }
 
