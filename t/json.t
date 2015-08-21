@@ -77,6 +77,7 @@ my $json = <<'JSON';
 ]
 JSON
 test_decode_json ($p, $json, 'AoA_traversal', 'Geo data');
+test_decode_json ($p, $json, 'with_Visitor', 'Geo data');
 
 $json = <<'JSON';
 {
@@ -93,7 +94,8 @@ $json = <<'JSON';
     }
 }
 JSON
-test_decode_json ($p, $json, 'AoA_traversal', 'Geo data');
+test_decode_json ($p, $json, 'AoA_traversal', 'Image data');
+test_decode_json ($p, $json, 'with_Visitor', 'Image data');
 
 $json = <<'JSON';
 {
@@ -133,6 +135,7 @@ $json = <<'JSON';
 }
 JSON
 test_decode_json ($p, $json, 'AoA_traversal', 'big test');
+test_decode_json ($p, $json, 'with_Visitor', 'big test');
 
 done_testing();
 
@@ -331,8 +334,8 @@ use Carp;
 
 use parent 'MarpaX::AST::Visitor';
 
-# todo: put this in the doc: passthrough visitors:
-# each visitor must return a scalar or ref to array or hash
+# todo: put this in the doc: Visitor is not recursive, so
+# no passthrough visitors: each visitor must return a scalar or ref to array or hash
 # so the ast must be distilled appropriately
 
 sub visit_value {
@@ -340,7 +343,7 @@ sub visit_value {
     if    ($ast->text eq 'true') { bless( do{\(my $o = 1)}, 'JSON::PP::Boolean' ) }
     elsif ($ast->text eq 'false'){ bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' ) }
     elsif ($ast->text eq 'null') { undef }
-    else{
+    else {
         croak "unknown literal: ", $ast->sprint;
     }
 }
