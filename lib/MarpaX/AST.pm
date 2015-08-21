@@ -343,8 +343,8 @@ sub distill{
     my $class = ref $ast;
 
     # duplicate root unless defined and set it as first parent
-    my $root = $class->new( [ $opts->{root} //= $ast->id, @$ast[1..$CHILDREN_START-1] ] );
-    my $skip_root = $root->id eq $ast->id;
+    my $root_id = $ast->id;
+    my $root = $class->new( [ $opts->{root} //= $root_id, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
     # append_literals_as_parents requires code commented # convert childless nodes to bare literals below
@@ -353,34 +353,12 @@ sub distill{
         $opts->{append_literals_as_parents} = { map { $_ => 1 } @{ $opts->{append_literals_as_parents} } }
     };
 
-=pod
-    # set up node skipping
-    if (my $skip_node = $opts->{skip}){
-        if (ref $skip_node eq 'ARRAY'){
-            $visitor->{skip} = sub {
-                my ($ast) = @_;
-                state $skip = { map { $_ => 1 } @{ $skip_node } };
-                return exists $skip->{ $ast->id }
-            }
-        }
-        elsif (ref $skip_node eq 'ARRAY'){
-            $visitor->{skip} = $opts->{skip}
-        }
-        else {
-            croak "Value of 'skip' must be an ARRAY or a CODE ref, not $skip_node."
-        }
-    }
-=cut
-
     $ast->walk( {
         skip =>
             ref $opts->{skip} eq 'ARRAY' ? sub {
                 my ($ast) = @_;
                 my ($node_id) = @$ast;
-# todo: move %$skip hash set up out of predicate sub per the above =pod
-                my @skip_node_ids = @{ $opts->{skip} };
-                push @skip_node_ids, $root->id if $skip_root;
-                state $skip = { map { $_ => 1 } @skip_node_ids };
+                state $skip = { map { $_ => 1 } @{ $opts->{skip} } };
                 return exists $skip->{ $node_id }
             } : $opts->{skip},
         visit => sub {
@@ -453,6 +431,15 @@ sub distill{
                 }
             }
         } });
+    }
+
+    # check if we have duplicated root and fix it
+    if (
+        $root->id eq $ast->id and
+        $root->children_count == 1 and
+        $root->first_child->id eq $root_id
+    ){
+        $root = $root->first_child
     }
 
     return $root;

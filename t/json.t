@@ -254,9 +254,8 @@ sub decode_with_Visitor{
 
     my $v = My::JSON::Decoding::Visitor->new();
 #    warn $ast->sprint;
-    my $decoded = $v->visit($ast);
-    warn MarpaX::AST::dumper($decoded);
-    return $decoded->[0]->[0];
+    # we return root (json) node as an array ref
+    return shift @{ $v->visit($ast) };
 }
 
 sub decode_AoA_traversal {
