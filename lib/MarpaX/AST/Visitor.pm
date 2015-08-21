@@ -50,6 +50,11 @@ sub visit{
     my ($visitor, $ast) = @_;
 
 #    warn "# visiting:\n", $ast->sprint;
+
+    croak "Arg 1 must be a reference, not $ast." unless ref $ast;
+    croak "Arg 1 must be an instance of MarpaX::AST, not $ast."
+        unless $ast->isa('MarpaX::AST');
+
     my $node_id = $ast->id;
 
     my $method;
