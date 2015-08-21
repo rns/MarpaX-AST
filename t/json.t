@@ -46,7 +46,8 @@ sub test_decode_json {
 }
 
 for my $json (@$jsons){
-    test_decode_json($p, $json, 'AoA');
+    test_decode_json($p, $json, 'AoA_traversal');
+    test_decode_json($p, $json, 'with_Visitor');
 }
 
 my $json = <<'JSON';
@@ -73,7 +74,7 @@ my $json = <<'JSON';
       }
 ]
 JSON
-test_decode_json ($p, $json, 'AoA', 'Geo data');
+test_decode_json ($p, $json, 'AoA_traversal', 'Geo data');
 
 $json = <<'JSON';
 {
@@ -90,7 +91,7 @@ $json = <<'JSON';
     }
 }
 JSON
-test_decode_json ($p, $json, 'AoA', 'Geo data');
+test_decode_json ($p, $json, 'AoA_traversal', 'Geo data');
 
 $json = <<'JSON';
 {
@@ -129,7 +130,7 @@ $json = <<'JSON';
     }
 }
 JSON
-test_decode_json ($p, $json, 'AoA', 'big test');
+test_decode_json ($p, $json, 'AoA_traversal', 'big test');
 
 done_testing();
 
@@ -229,24 +230,30 @@ sub decode{
     return $parser->$method( $ast );
 }
 
-sub decode_AoA {
-    my $parser = shift;
+sub decode_with_Visitor{
+    my ($parser, $ast) = @_;
 
-    my $ast  = shift;
+    my $v = JSON::Decoding::Visitor->new();
+    warn $ast->sprint;
+    return $v->visit($ast);
+}
+
+sub decode_AoA_traversal {
+    my ($parser, $ast) = @_;
 
     if (ref $ast){
         my ($id, @nodes) = @$ast;
         if ($id eq 'json'){
-            $parser->decode_AoA(@nodes);
+            $parser->decode_AoA_traversal(@nodes);
         }
         elsif ($id eq 'members'){
-            return { map { $parser->decode_AoA($_) } @nodes };
+            return { map { $parser->decode_AoA_traversal($_) } @nodes };
         }
         elsif ($id eq 'pair'){
-            return map { $parser->decode_AoA($_) } @nodes;
+            return map { $parser->decode_AoA_traversal($_) } @nodes;
         }
         elsif ($id eq 'elements'){
-            return [ map { $parser->decode_AoA($_) } @nodes ];
+            return [ map { $parser->decode_AoA_traversal($_) } @nodes ];
         }
         elsif ($id eq 'string'){
             return decode_string( substr $nodes[0]->[1], 1, -1 );
@@ -256,14 +263,14 @@ sub decode_AoA {
         }
         elsif ($id eq 'object'){
             return {} unless @nodes;
-            return $parser->decode_AoA($_) for @nodes;
+            return $parser->decode_AoA_traversal($_) for @nodes;
         }
         elsif ($id eq 'array'){
             return [] unless @nodes;
-            return $parser->decode_AoA($_) for @nodes;
+            return $parser->decode_AoA_traversal($_) for @nodes;
         }
         else{
-            return $parser->decode_AoA($_) for @nodes;
+            return $parser->decode_AoA_traversal($_) for @nodes;
         }
     }
     else
@@ -296,11 +303,10 @@ sub decode_string {
     return $s;
 } ## end sub decode_string
 
-package My::Visitor;
+package JSON::Decoding::Visitor;
 use parent 'MarpaX::AST::Visitor';
 
-
-package My::Interpreter;
+package JSON::Decoding::Interpreter;
 use parent 'MarpaX::AST::Interpreter';
 
 1;
