@@ -99,6 +99,7 @@ sub AUTOLOAD{
 sub DESTROY { }
 
 # todo: better names for both interpreter types
+# inheritance-based interpreter doesn't allow to set context
 package MarpaX::AST::Interpreter::Inheritance_Based;
 
 use strict;
