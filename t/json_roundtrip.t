@@ -911,7 +911,8 @@ sub export {
     my ($parser, $ast) = @_;
 #    warn $ast->sprint;
     $ast = $ast->distill({
-        skip => [qw{ members elements value comma colon string },
+        # todo: bug or feature? value string, if not skipped, will be passed through
+        skip => [qw{ members elements value string comma colon },
             'left curly', 'left square', 'right curly', 'right square' ]
     });
 
