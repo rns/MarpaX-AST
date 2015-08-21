@@ -210,6 +210,85 @@ sub pow::cmpt { $_[1]->cmpt($_[2]->first_child) ** $_[1]->cmpt($_[2]->last_child
 sub num::cmpt { $_[2]->first_child->text }
 sub par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 
+# inheritance-based interpreters
+package My::Interpreter::num;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->text
+}
+
+package My::Interpreter::add;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate + $ast->last_child->evaluate;
+}
+
+package My::Interpreter::sub;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate - $ast->last_child->evaluate;
+}
+
+package My::Interpreter::mul;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate * $ast->last_child->evaluate;
+}
+
+package My::Interpreter::div;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate / $ast->last_child->evaluate;
+}
+
+package My::Interpreter::par;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate;
+}
+
+# set up an interpreter with single class for all binary operations
+package My::Simpler::Interpreter::num;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->text
+}
+
+package My::Simpler::Interpreter::binop;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    my $op = $ast->id;
+    if    ($op eq 'add') { $ast->first_child->evaluate + $ast->last_child->evaluate }
+    elsif ($op eq 'sub') { $ast->first_child->evaluate - $ast->last_child->evaluate }
+    elsif ($op eq 'mul') { $ast->first_child->evaluate * $ast->last_child->evaluate }
+    elsif ($op eq 'div') { $ast->first_child->evaluate / $ast->last_child->evaluate }
+    elsif ($op eq 'pow') { $ast->first_child->evaluate ** $ast->last_child->evaluate }
+}
+
+package My::Simpler::Interpreter::par;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate;
+}
+
 package main;
 
 for my $input (@inputs){
@@ -221,8 +300,24 @@ for my $input (@inputs){
     my $i = MarpaX::AST::Interpreter->new();
 
 #    warn MarpaX::AST::dumper( $i->ast );
+    # dispatch-based
     is $i->cmpt($ast), # context-free interpreting :)
         eval $input, "$input, Interpreter pattern (context-free)";
+
+    # special class for each binary op
+    my $i1 = MarpaX::AST::Interpreter::Inheritance_Based->new(
+        $ast, { namespace => 'My::Interpreter', skip => [qw{Number}] });
+
+    is $i1->ast->evaluate, # context-free interpreting :)
+        eval $input, "$input, inheritance-based Interpreter (context-free)";
+
+    # single class for all binary ops
+    my $i2 = MarpaX::AST::Interpreter::Inheritance_Based->new(
+        $ast, { namespace => 'My::Simpler::Interpreter', skip => [qw{Number}],
+            'My::Simpler::Interpreter::binop' => [qw{ add sub mul pow div }] });
+
+    is $i2->ast->evaluate, # context-free interpreting :)
+        eval $input, "$input, simpler inheritance-based Interpreter (context-free)";
 }
 
 #
@@ -263,6 +358,7 @@ sub My::Visitor::visit_var{
     $visitor->ctx->{ $ast->first_child->text };
 }
 
+# dispatch-based interpreter (using AUTOLOAD)
 package My::Expr::add;
 
 # use custom namespace for interpreter; we could just add
@@ -283,6 +379,22 @@ sub My::Expr::par::cmpt { $_[1]->cmpt($_[2]->first_child) }
 
 # lookup the variable value by its name in the context
 sub My::Expr::var::cmpt{ $_[1]->ctx->{ $_[2]->first_child->text } }
+
+package My::Interpreter::pow;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate ** $ast->last_child->evaluate;
+}
+
+package My::Interpreter::parens;
+use parent 'MarpaX::AST';
+
+sub evaluate {
+    my ($ast) = @_;
+    $ast->first_child->evaluate;
+}
 
 package main;
 
