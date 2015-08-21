@@ -353,11 +353,31 @@ sub distill{
         $opts->{append_literals_as_parents} = { map { $_ => 1 } @{ $opts->{append_literals_as_parents} } }
     };
 
+=pod
+    # set up node skipping
+    if (my $skip_node = $opts->{skip}){
+        if (ref $skip_node eq 'ARRAY'){
+            $visitor->{skip} = sub {
+                my ($ast) = @_;
+                state $skip = { map { $_ => 1 } @{ $skip_node } };
+                return exists $skip->{ $ast->id }
+            }
+        }
+        elsif (ref $skip_node eq 'ARRAY'){
+            $visitor->{skip} = $opts->{skip}
+        }
+        else {
+            croak "Value of 'skip' must be an ARRAY or a CODE ref, not $skip_node."
+        }
+    }
+=cut
+
     $ast->walk( {
         skip =>
             ref $opts->{skip} eq 'ARRAY' ? sub {
                 my ($ast) = @_;
                 my ($node_id) = @$ast;
+# todo: move %$skip hash set up out of predicate sub per the above =pod
                 my @skip_node_ids = @{ $opts->{skip} };
                 push @skip_node_ids, $root->id if $skip_root;
                 state $skip = { map { $_ => 1 } @skip_node_ids };
