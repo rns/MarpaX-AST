@@ -342,12 +342,13 @@ sub distill{
 
     my $class = ref $ast;
 
-    # duplicate root unless defined and set it as first parent
+    # duplicate root (unless another root id defined in $opts) and set it as first parent
     my $root_id = $ast->id;
     my $root = $class->new( [ $opts->{root} //= $root_id, @$ast[1..$CHILDREN_START-1] ] );
     my $parents = [ $root ];
 
-    # append_literals_as_parents requires code commented # convert childless nodes to bare literals below
+    # append_literals_as_parents requires code
+    # commented below as '# convert childless nodes to bare literals '
     $opts->{append_literals_as_parents} //= 0;
     if (ref $opts->{append_literals_as_parents} eq "ARRAY"){
         $opts->{append_literals_as_parents} = { map { $_ => 1 } @{ $opts->{append_literals_as_parents} } }
