@@ -7,16 +7,19 @@ use warnings;
 
 use Carp;
 
+# main:: is the default namespace
 sub new{
     my ($class, $opts) = @_;
+
     my $interpreter = { %$opts } if defined $opts;
     $interpreter->{namespace} //= 'main';
     $interpreter->{context} //= {};
-    # if an opt contains ::, it must be a namespace for a list of nodes
+    # get namespace specification(s)
     my $namespace_spec = {};
     for my $namespace
     (
-        grep { $_ ne 'context' and $_ ne 'namespace' and index '::', 0 >= 0 }
+        # filter if an opt contains ::, it must be a namespace for a list of nodes
+        grep { $_ ne 'context' and $_ ne 'namespace' and index('::', 0) >= 0 }
             keys %{ $opts }
     ){
         my $node_spec = $opts->{$namespace};
@@ -33,6 +36,7 @@ sub new{
         }
     }
     $interpreter->{namespace_spec} = $namespace_spec;
+
     bless $interpreter, $class;
 }
 
