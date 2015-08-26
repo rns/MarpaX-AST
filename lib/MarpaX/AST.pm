@@ -531,17 +531,18 @@ sub roundtrip{
 }
 
 # returns for debugging if smth. goes wrong
-# todo: $ast->validate()
+# todo: $ast->validate() validate $ast according to $schema
 sub validate{
     my ($ast, $external_schema) = @_;
     state $schema = internalize($external_schema);
     # validate() must warn about non-literal $ast nodes missing from $schema
     # every child of a hash node must validate as hash_item
+    # the children_count of hash nodes (except hash_item nodes) must be even
     # every child of an array node must validate as array_item
     # hash_item node must have exactly two children, the first of which must be a literal
     # array_item node must have exactly two children, the first of which must be a literal
-    # or a single child
-    # undefs?
+    # name_array node must have exactly two children, the first of which must be a literal
+    # "must be a literal" above includes "export()'able to literal"
     return 1;
 }
 
@@ -598,9 +599,7 @@ sub do_export{
             my $items = [];
             map {
                 my $item = ref($_) ? $_->do_export($schema) : $_;
-                # todo: validate $ast according to $schema
-                # assuming pre-validation
-                # array item is indexed [ $index, $value ]
+                # array item is indexed
                 if (ref $item eq "HASH" and my $indexed_array_item = $item->{'indexed array item'}) {
 #                    warn "indexed array item ", dumper($item);
                     $items->[ $indexed_array_item->{index} ] = $indexed_array_item->{value}
@@ -626,7 +625,7 @@ sub do_export{
                     { index => $index->do_export($schema), value => $value->do_export($schema) }
                     };
             }
-            elsif(@$children == 1){
+            elsif (@$children == 1){
                 return $children->[0]->do_export($schema);
             }
         }
