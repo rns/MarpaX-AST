@@ -233,19 +233,19 @@ sub parse {
 } ## end sub parse
 
 
-sub decode{
+sub decode {
     my ( $parser, $string, $type ) = @_;
     my $ast = MarpaX::AST->new( $parser->parse($string) );
     my $method = "decode_$type";
     return $parser->$method( $ast );
 }
 
-sub decode_with_Visitor{
+sub distill {
     my ($parser, $ast) = @_;
 
     my $always_skip = { map { $_ => 1 } qw{ members elements string pair } };
 
-    $ast = $ast->distill({
+    return $ast->distill({
         skip => sub {
             my ($ast) = @_;
             my $node_id = $ast->id;
@@ -255,6 +255,12 @@ sub decode_with_Visitor{
         }
     });
 
+}
+
+sub decode_with_Visitor{
+    my ($parser, $ast) = @_;
+
+    $ast = $parser->distill($ast);
     my $v = My::JSON::Decoding::Visitor->new();
 #    warn $ast->sprint;
     # we return root (json) node as an array ref
