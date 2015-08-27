@@ -50,6 +50,7 @@ sub test_decode_json {
 for my $json (@$jsons){
     test_decode_json($p, $json, 'AoA_traversal');
     test_decode_json($p, $json, 'with_Visitor');
+    test_decode_json($p, $json, 'with_Interpreter');
 }
 
 my $json = <<'JSON';
@@ -267,6 +268,13 @@ sub decode_with_Visitor{
     return shift @{ $v->visit($ast) };
 }
 
+sub decode_with_Interpreter{
+    my ($parser, $ast) = @_;
+    $ast = $parser->distill($ast);
+    warn $ast->sprint;
+    return
+}
+
 sub decode_AoA_traversal {
     my ($parser, $ast) = @_;
 
@@ -382,6 +390,6 @@ sub visit_json{
 }
 
 package My::JSON::Decoding::Interpreter;
-use parent 'MarpaX::AST::Interpreter';
+use parent 'MarpaX::AST::Dispatching_Interpreter';
 
 1;

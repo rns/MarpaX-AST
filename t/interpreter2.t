@@ -14,7 +14,7 @@ use Test::Differences;
 use Marpa::R2;
 
 require MarpaX::AST;
-require MarpaX::AST::Interpreter;
+require MarpaX::AST::Dispatching_Interpreter;
 
 my $prove = $ENV{HARNESS_ACTIVE};
 
@@ -66,7 +66,7 @@ my $ast1 = expr_to_ast($expr);
 # warn "# ast1:\n", $ast1->sprint;
 diag qq{Boolean 1 is "$expr"} unless $prove;
 
-my $interp = MarpaX::AST::Interpreter->new({
+my $interp = MarpaX::AST::Dispatching_Interpreter->new({
     namespace => 'Boolean_Expression',
     context => $context,
 });

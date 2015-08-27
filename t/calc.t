@@ -12,6 +12,7 @@ use Marpa::R2;
 require MarpaX::AST;
 require MarpaX::AST::Visitor;
 require MarpaX::AST::Interpreter;
+require MarpaX::AST::Dispatching_Interpreter;
 
 my $dumper = \&MarpaX::AST::dumper;
 
@@ -297,27 +298,27 @@ for my $input (@inputs){
 
     # create interpreter with default options:
     # node_id packages in main::*, context initialized to { }
-    my $i = MarpaX::AST::Interpreter->new();
+    my $i = MarpaX::AST::Dispatching_Interpreter->new();
 
 #    warn MarpaX::AST::dumper( $i->ast );
     # dispatch-based
     is $i->cmpt($ast), # context-free interpreting :)
-        eval $input, "$input, Interpreter pattern (context-free)";
+        eval $input, "$input, dispatching interpreter (context-free)";
 
     # special class for each binary op
-    my $i1 = MarpaX::AST::Interpreter::Inheritance_Based->new(
+    my $i1 = MarpaX::AST::Interpreter->new(
         $ast, { namespace => 'My::Interpreter', skip => [qw{Number}] });
 
     is $i1->ast->evaluate, # context-free interpreting :)
-        eval $input, "$input, inheritance-based Interpreter (context-free)";
+        eval $input, "$input, inheritance-based interpreter (context-free)";
 
     # single class for all binary ops
-    my $i2 = MarpaX::AST::Interpreter::Inheritance_Based->new(
+    my $i2 = MarpaX::AST::Interpreter->new(
         $ast, { namespace => 'My::Simpler::Interpreter', skip => [qw{Number}],
             'My::Simpler::Interpreter::binop' => [qw{ add sub mul pow div }] });
 
     is $i2->ast->evaluate, # context-free interpreting :)
-        eval $input, "$input, simpler inheritance-based Interpreter (context-free)";
+        eval $input, "$input, simpler inheritance-based interpreter (context-free)";
 }
 
 #
@@ -411,7 +412,7 @@ for my $input (@inputs){
     my $ast = MarpaX::AST->new( ${ $g->parse( \$input ) } );
 
     # contextual interpreting
-    my $i = MarpaX::AST::Interpreter->new(
+    my $i = MarpaX::AST::Dispatching_Interpreter->new(
         { namespace => 'My::Expr', context => $context } );
     is $i->cmpt($ast), eval $subst, "$input, Interpreter pattern (in context)";
 

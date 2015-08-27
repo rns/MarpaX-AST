@@ -536,7 +536,7 @@ sub validate{
     my ($ast, $external_schema) = @_;
     state $schema = internalize($external_schema);
     # validate() must warn about non-literal $ast nodes missing from $schema
-    # every child of a hash node must validate as hash_item
+    # every child of a hash node must (1) appear as hash_item in the scheme and (2) validate as hash_item
     # the children_count of hash nodes (except hash_item nodes) must be even
     # every child of an array node must validate as array_item
     # hash_item node must have exactly two children, the first of which must be a literal

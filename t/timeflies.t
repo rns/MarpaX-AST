@@ -16,7 +16,7 @@ use Marpa::R2;
 
 require MarpaX::AST;
 require MarpaX::AST::Visitor;
-require MarpaX::AST::Interpreter;
+require MarpaX::AST::Dispatching_Interpreter;
 
 my $grammar = Marpa::R2::Scanless::G->new({ source => \(<<'END_OF_SOURCE'),
 
@@ -170,7 +170,7 @@ bracketed_ok($expected, \@actual, 'Ambiguous English sentences, Visitor pattern'
 
 # Interpreter inheritance for custom options
 package My::Interpreter;
-use parent 'MarpaX::AST::Interpreter';
+use parent 'MarpaX::AST::Dispatching_Interpreter';
 
 sub new{
     my ($class) = @_;
