@@ -245,12 +245,14 @@ sub assert_options{
 }
 
 my @parents;
+my @siblings;
 
 # assert options and do_walk()
 sub walk{
     my ($ast, $opts ) = @_;
 
     undef @parents;
+    undef @siblings;
 
     $ast->assert_options($opts, {
         visit => [ sub{ ref $_[0] eq "CODE" }, "CODE ref" ]
@@ -285,22 +287,26 @@ sub do_walk{
         $ast = CORE::bless $node, __PACKAGE__ ;
     }
 
+    my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
+
     state $context;
     $context->{depth} = $opts->{depth};
     $context->{parent} = $parents[ $context->{depth} - 1 ];
+    $context->{siblings} = $siblings[ $context->{depth} - 1 ];
 
     my $skip = $opts->{skip}->( $ast, $context );
 
     # depth, siblings and parents for context
-    $opts->{depth}++ unless $skip;
-    push @parents, $ast;
+    unless ($skip){
+        $opts->{depth}++ ;
+        push @parents, $ast;
+        push @siblings, \@children;
+    }
 
     if (not $skip) {
         # todo: set parent and siblings in $context
         $opts->{visit}->( $ast, $context );
     }
-
-    my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
 
     # don't walk into [ 'name', 'value' ] and bare (nameless) literal nodes
     # and childless nodes
@@ -309,8 +315,11 @@ sub do_walk{
     }
 
     # depth, siblings and parents for context
-    $opts->{depth}-- unless $skip;
-    pop @parents;
+    unless ($skip){
+        $opts->{depth}-- unless $skip;
+        pop @parents;
+        pop @siblings;
+    }
 }
 
 sub text{

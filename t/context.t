@@ -43,25 +43,43 @@ my $parents = {
     child34 => 'child3',
 };
 
-warn $ast->sprint;
+my $siblings = {
+    child1 => [qw{ child1 child2 child3 }],
+    child2 => [qw{ child1 child2 child3 }],
+    child3 => [qw{ child1 child2 child3 }],
+    child21 => [qw{ child21 child22 child23 }],
+    child211 => [qw{ child211 }],
+    child22 => [qw{ child21 child22 child23 }],
+    child23 => [qw{ child21 child22 child23 }],
+    child231 => [qw{ child231 }],
+    child31 => [qw{ child31 child32 child33 child34 }],
+    child32 => [qw{ child31 child32 child33 child34 }],
+    child33 => [qw{ child31 child32 child33 child34 }],
+    child331 => [qw{ child331 }],
+    child34 => [qw{ child31 child32 child33 child34 }],
+};
+
+#warn $ast->sprint;
 
 $ast->walk({
     visit => sub {
         my ($ast, $ctx) = @_;
 
-        warn "# node: ", $ast->id;
+#        warn "# node: ", $ast->id;
 
         if ($ast->is_root){
             ok not (defined $ctx->{parent}), "parent of root not defined";
             return;
         }
 
-#        ok defined $ctx->{parent}, "parent of " . $ast->id . " defined";
+        ok defined $ctx->{parent}, join ' ', "parent of", $ast->id, "defined";
 
-        return unless defined $ctx->{parent};
+        is $ctx->{parent}->id, $parents->{ $ast->id },
+            join ' ', "parent of", $ast->id, "is", $ctx->{parent}->id;
 
-        unless (is $ctx->{parent}->id, $parents->{ $ast->id }, "parent of " . $ast->id){
-        }
+        my $got_siblings = [ map { $_->id } @{ $ctx->{siblings} } ];
+        is_deeply $got_siblings, $siblings->{ $ast->id }, join ' ', "siblings of", $ast->id, "are [", join(', ', @$got_siblings), ']';
+
 #        warn "# at $ctx->{depth}: parents of ", $ast->id, ":\n", join ("\n", map { $_->id } @{ $ctx->{parent} } );
     }
 });
