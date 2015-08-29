@@ -37,6 +37,7 @@ sub new {
         }
     }
 #    warn $CHILDREN_START;
+    $root = $ast;
     return MarpaX::AST::bless( $ast, $class );
 }
 
