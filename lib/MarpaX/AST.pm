@@ -252,7 +252,6 @@ sub walk{
         visit => [ sub{ ref $_[0] eq "CODE" }, "CODE ref" ]
     });
     $opts->{traversal} //= 'preorder';
-    $opts->{max_depth} //= 1_000_000;
     $opts->{skip} //= sub { 0 };
     $opts->{depth} = 0;
 
@@ -289,7 +288,7 @@ sub do_walk{
 
     $opts->{depth}++ unless $skip;
 
-    unless ($opts->{depth} > $opts->{max_depth} or $skip) {
+    if (not $skip) {
         # todo: set parent and siblings in $context
         $opts->{visit}->( $ast, $context );
     }
