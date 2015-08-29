@@ -50,7 +50,6 @@ sub test_decode_json {
 for my $json (@$jsons){
     test_decode_json($p, $json, 'AoA_traversal');
     test_decode_json($p, $json, 'with_Visitor');
-    test_decode_json($p, $json, 'with_Interpreter');
 }
 
 my $json = <<'JSON';
