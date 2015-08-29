@@ -92,6 +92,7 @@ sub is_literal{
     my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
 #    warn "is_literal: $node_id, @children", $node_id eq '#text';
     # check for bare literal
+    croak "Node id undefined." unless defined $node_id;
     return 1 if $node_id eq '#text';
     # a node is literal if it has ...
     return (
