@@ -244,9 +244,13 @@ sub assert_options{
 
 }
 
+my @parents;
+
 # assert options and do_walk()
 sub walk{
     my ($ast, $opts ) = @_;
+
+    undef @parents;
 
     $ast->assert_options($opts, {
         visit => [ sub{ ref $_[0] eq "CODE" }, "CODE ref" ]
@@ -283,10 +287,13 @@ sub do_walk{
 
     state $context;
     $context->{depth} = $opts->{depth};
+    $context->{parent} = $parents[ $context->{depth} - 1 ];
 
     my $skip = $opts->{skip}->( $ast, $context );
 
+    # depth, siblings and parents for context
     $opts->{depth}++ unless $skip;
+    push @parents, $ast;
 
     if (not $skip) {
         # todo: set parent and siblings in $context
@@ -298,11 +305,12 @@ sub do_walk{
     # don't walk into [ 'name', 'value' ] and bare (nameless) literal nodes
     # and childless nodes
     if ( not $ast->is_literal and @children ){
-        # set siblings and parents for context and walk on
         do_walk( $_, $opts  ) for @children;
     }
 
+    # depth, siblings and parents for context
     $opts->{depth}-- unless $skip;
+    pop @parents;
 }
 
 sub text{
