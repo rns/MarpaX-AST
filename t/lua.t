@@ -29,7 +29,7 @@ BEGIN{
         warn $_[0] unless $_[0] =~ /Deep recursion|Redundant argument in sprintf/ }
 }
 
-# todo: loosen the dep on Lua::AST
+# todo: loosen the dep on Lua::AST or move to author tests
 use lib qq{$parser_module_dir/lib};
 require MarpaX::Languages::Lua::AST;
 

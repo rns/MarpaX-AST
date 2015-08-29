@@ -906,7 +906,6 @@ sub parse {
 
 } ## end sub parse
 
-# todo: decode by export()
 sub export {
     my ($parser, $ast) = @_;
 #    warn $ast->sprint;
@@ -930,7 +929,7 @@ sub export {
     });
 }
 
-# todo: attach comments to nodes()
+# todo: test decoration of ast nodes with comments
 
 sub decode_json {
     my ($parser, $input) = @_;
