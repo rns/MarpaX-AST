@@ -323,6 +323,7 @@ sub sprint{
     $opts->{visit} = sub {
         my ($ast, $context) = @_;
         my ($node_id, @children) = ( $ast->[0], @$ast[$CHILDREN_START..$#{$ast}] );
+        croak "Node id undefined." if not defined $node_id;
         croak "Bad node id: $node_id, not scalar." if ref $node_id;
         my $indent = $opts->{indent} x ( $context->{depth} );
         if ( $ast->is_literal ){
