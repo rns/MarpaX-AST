@@ -60,14 +60,10 @@ my $siblings = {
     child34 => [qw{ child31 child32 child33 child34 }],
 };
 
-#warn $ast->sprint;
-
 $ast->walk({
     skip => sub { $_[0]->id eq 'child4' },
     visit => sub {
         my ($ast, $ctx) = @_;
-
-#        warn "# node: ", $ast->id;
 
         if ($ast->is_root){
             ok not (defined $ctx->{parent}), "parent of root not defined";
@@ -81,8 +77,6 @@ $ast->walk({
 
         my $got_siblings = [ map { $_->id } @{ $ctx->{siblings} } ];
         is_deeply $got_siblings, $siblings->{ $ast->id }, join ' ', "siblings of", $ast->id, "are [", join(', ', @$got_siblings), ']';
-
-#        warn "# at $ctx->{depth}: parents of ", $ast->id, ":\n", join ("\n", map { $_->id } @{ $ctx->{parent} } );
     }
 });
 
