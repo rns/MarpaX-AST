@@ -291,12 +291,14 @@ sub do_walk{
 
     state $context;
     $context->{depth} = $opts->{depth};
+    # todo: do we need grand, grand ... parents?
+    $context->{ascendants} = \@parents;
     $context->{parent} = $parents[ $context->{depth} - 1 ];
     $context->{siblings} = $siblings[ $context->{depth} - 1 ];
 
     my $skip = $opts->{skip}->( $ast, $context );
 
-    # depth, siblings and parents for context
+    # depth, siblings and parents for $context
     unless ($skip){
         $opts->{depth}++ ;
         push @parents, $ast;
@@ -304,7 +306,6 @@ sub do_walk{
     }
 
     if (not $skip) {
-        # todo: set parent and siblings in $context
         $opts->{visit}->( $ast, $context );
     }
 
@@ -314,7 +315,7 @@ sub do_walk{
         do_walk( $_, $opts  ) for @children;
     }
 
-    # depth, siblings and parents for context
+    # depth, siblings and parents for $context
     unless ($skip){
         $opts->{depth}-- unless $skip;
         pop @parents;
