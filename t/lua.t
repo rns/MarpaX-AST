@@ -50,11 +50,11 @@ my @lua_files = (
 for my $lua_file (@lua_files){
 
     my $lua_src = slurp_file($lua_file);
-    my $p = MarpaX::Languages::Lua::AST->new;
+    my $p = MarpaX::Languages::Lua::AST->new({ roundtrip => 1 });
 
     my $ast = $p->parse( $lua_src );
 #    warn MarpaX::AST::dumper($p->{discardables});
-    my $discardables = $p->{discardables};
+    my $discardables = $p->discardables();
 
     $ast = MarpaX::AST->new( $ast, { CHILDREN_START => 3 } );
 
