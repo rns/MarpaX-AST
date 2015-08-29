@@ -298,26 +298,27 @@ sub do_walk{
 
     my $skip = $opts->{skip}->( $ast, $context );
 
-    # depth, siblings and parents for $context
+    # set depth, siblings and parents for $context
     unless ($skip){
         $opts->{depth}++ ;
         push @parents, $ast;
         push @siblings, \@children;
     }
 
+    # do visit
     if (not $skip) {
         $opts->{visit}->( $ast, $context );
     }
 
-    # don't walk into [ 'name', 'value' ] and bare (nameless) literal nodes
+    # don't walk into [ 'name', 'value' ], bare (nameless) literal nodes
     # and childless nodes
     if ( not $ast->is_literal and @children ){
         do_walk( $_, $opts  ) for @children;
     }
 
-    # depth, siblings and parents for $context
+    # unset depth, siblings and parents for $context
     unless ($skip){
-        $opts->{depth}-- unless $skip;
+        $opts->{depth}--;
         pop @parents;
         pop @siblings;
     }
