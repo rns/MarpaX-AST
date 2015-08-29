@@ -23,6 +23,7 @@ my $ast_AoA = [
         [ 'child33', [ 'child331', 'value331' ] ],
         [ 'child34', 'value34' ],
     ],
+    [ 'child4', 'value4' ]
 ];
 
 my $ast = MarpaX::AST->new($ast_AoA);
@@ -44,9 +45,9 @@ my $parents = {
 };
 
 my $siblings = {
-    child1 => [qw{ child1 child2 child3 }],
-    child2 => [qw{ child1 child2 child3 }],
-    child3 => [qw{ child1 child2 child3 }],
+    child1 => [qw{ child1 child2 child3 child4 }],
+    child2 => [qw{ child1 child2 child3 child4 }],
+    child3 => [qw{ child1 child2 child3 child4 }],
     child21 => [qw{ child21 child22 child23 }],
     child211 => [qw{ child211 }],
     child22 => [qw{ child21 child22 child23 }],
@@ -62,6 +63,7 @@ my $siblings = {
 #warn $ast->sprint;
 
 $ast->walk({
+    skip => sub { $_[0]->id eq 'child4' },
     visit => sub {
         my ($ast, $ctx) = @_;
 
