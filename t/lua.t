@@ -72,13 +72,24 @@ for my $lua_file (@lua_files){
     }
 
 #    warn MarpaX::AST::dumper($ast);
-#    warn $ast->sprint;
+    # 2-stage distillation
     $ast = $ast->distill({
         root => 'chunk',
-        skip => [ 'statements', 'chunk' ],
+        skip => [ qw{ statements chunk fieldist qualifiedname } ],
     });
 
-#    warn $ast->sprint;
+    $ast = $ast->distill({
+        root => 'chunk',
+        skip => sub {
+            my ($ast) = @_;
+            my @children = @{ $ast->children() };
+            return 1 if
+                @children == 1 and
+                # todo: check why this check is at all needed
+                ref $ast and ref $ast->first_child and
+                $ast->id eq $ast->first_child->id;
+        },
+    });
 
     eq_or_diff $ast->roundtrip($discardables), $lua_src,
         qq{$lua_file roundtripped};
