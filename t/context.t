@@ -26,7 +26,7 @@ my $ast_AoA = [
     [ 'child4', 'value4' ]
 ];
 
-my $ast = MarpaX::AST->new($ast_AoA);
+my $root = MarpaX::AST->new($ast_AoA);
 
 my $parents = {
     child1 => 'root',
@@ -60,7 +60,23 @@ my $siblings = {
     child34 => [qw{ child31 child32 child33 child34 }],
 };
 
-$ast->walk({
+my $index = {
+    child1 => [ 1 ],
+    child2 => [ 2 ],
+    child21 => [ 2, 1 ],
+    child211 => [ 2, 1, 1 ],
+    child231 => [ 2, 3, 1 ],
+    child22 => [ 2, 2 ],
+    child23 => [ 2, 3 ],
+    child3 => [ 3 ],
+    child31 => [ 3, 1 ],
+    child32 => [ 3, 2 ],
+    child33 => [ 3, 3 ],
+    child331 => [ 3, 3, 1 ],
+    child34 => [ 3, 4 ],
+};
+
+$root->walk({
     skip => sub { $_[0]->id eq 'child4' },
     visit => sub {
         my ($ast, $ctx) = @_;
@@ -69,6 +85,12 @@ $ast->walk({
             ok not (defined $ctx->{parent}), "parent of root not defined";
             return;
         }
+
+        my $path = '[' . join (']->[', @{ $ctx->{index} } ) . ']';
+        my $indexed = eval '$root->' . $path;
+        is $indexed->id, $ast->id, "indexed " . $ast->id;
+
+        is_deeply $ctx->{index}, $index->{ $ast->id }, "index of " . $ast->id;
 
         ok defined $ctx->{parent}, join ' ', "parent of", $ast->id, "defined";
 
