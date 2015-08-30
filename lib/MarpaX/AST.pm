@@ -668,6 +668,11 @@ sub do_export{
     }
 }
 
+sub dump{
+    my ($ast) = @_;
+    return dumper($ast);
+}
+
 sub dumper{
   use Data::Dumper;
   {
