@@ -225,6 +225,7 @@ sub remove_child{
     return splice ( @$ast, $ix + $CHILDREN_START, 1 );
 }
 
+# get the node by its address -- sequences of indices in ast as array of arrays
 sub node_by_address{
     my ($ast, $address) = @_;
     eval '$ast->' . '[' . join (']->[', @{ $address } ) . ']';
