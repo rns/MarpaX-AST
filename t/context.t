@@ -60,7 +60,7 @@ my $siblings = {
     child34 => [qw{ child31 child32 child33 child34 }],
 };
 
-my $index = {
+my $address = {
     child1 => [ 1 ],
     child2 => [ 2 ],
     child21 => [ 2, 1 ],
@@ -86,11 +86,10 @@ $root->walk({
             return;
         }
 
-        my $path = '[' . join (']->[', @{ $ctx->{index} } ) . ']';
-        my $indexed = eval '$root->' . $path;
-        is $indexed->id, $ast->id, "indexed " . $ast->id;
+        my $addressed = $root->node_by_address( $ctx->{address} );
+        is $addressed->id, $ast->id, "addressed " . $ast->id;
 
-        is_deeply $ctx->{index}, $index->{ $ast->id }, "index of " . $ast->id;
+        is_deeply $ctx->{address}, $address->{ $ast->id }, "address of " . $ast->id;
 
         ok defined $ctx->{parent}, join ' ', "parent of", $ast->id, "defined";
 

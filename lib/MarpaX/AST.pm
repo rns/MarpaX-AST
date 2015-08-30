@@ -225,6 +225,11 @@ sub remove_child{
     return splice ( @$ast, $ix + $CHILDREN_START, 1 );
 }
 
+sub node_by_address{
+    my ($ast, $address) = @_;
+    eval '$ast->' . '[' . join (']->[', @{ $address } ) . ']';
+}
+
 sub assert_options{
     my ($ast, $opts, $spec) = @_;
 
@@ -247,7 +252,7 @@ sub assert_options{
 # context
 my @parents;
 my @siblings;
-my @index;
+my @address;
 
 # assert options and do_walk()
 sub walk{
@@ -255,7 +260,7 @@ sub walk{
 
     undef @parents;
     undef @siblings;
-    undef @index;
+    undef @address;
 
     $ast->assert_options($opts, {
         visit => [ sub{ ref $_[0] eq "CODE" }, "CODE ref" ]
@@ -298,7 +303,7 @@ sub do_walk{
     $context->{ascendants} = \@parents;
     $context->{parent} = $parents[ $context->{depth} - 1 ];
     $context->{siblings} = $siblings[ $context->{depth} - 1 ];
-    $context->{index} = \@index;
+    $context->{address} = \@address;
 
     my $skip = $opts->{skip}->( $ast, $context );
 
@@ -318,9 +323,9 @@ sub do_walk{
     # and childless nodes
     if ( not $ast->is_literal and @children ){
         for my $i (0..$#children) {
-            push @index, $i + $CHILDREN_START;
+            push @address, $i + $CHILDREN_START;
             do_walk( $children[$i], $opts  );
-            pop @index;
+            pop @address;
         }
     }
 
