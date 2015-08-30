@@ -306,7 +306,7 @@ sub do_walk{
     $context->{siblings} = $siblings[ $context->{depth} - 1 ];
     $context->{address} = \@address;
 
-    my $skip = $opts->{skip}->( $ast, $context );
+    my $skip = $opts->{skip}->( $ast );
 
     # set depth, siblings and parents for $context
     unless ($skip){
