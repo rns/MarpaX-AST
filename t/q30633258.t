@@ -71,7 +71,7 @@ EOS
 
 my $raw_ast = $ast;
 
-# test distill with full and selective append_literals_as_parents
+# test distill with full (1) and selective (node id list) append_literals_as_parents
 for my $append_literals_as_parents (1, [ qw{ name subname string } ]){
     $ast = $raw_ast->distill({
         root => 'root',

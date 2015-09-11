@@ -315,7 +315,7 @@ sub do_walk{
         push @siblings, \@children;
     }
 
-    # do visit
+    # pre-order op -- visit
     if (not $skip) {
         $opts->{visit}->( $ast, $context );
     }
@@ -326,9 +326,12 @@ sub do_walk{
         for my $i (0..$#children) {
             push @address, $i + $CHILDREN_START;
             do_walk( $children[$i], $opts  );
+            # in-order op
             pop @address;
         }
     }
+
+    # post-order op
 
     # unset depth, siblings and parents for $context
     unless ($skip){
