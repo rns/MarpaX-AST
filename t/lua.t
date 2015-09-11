@@ -88,7 +88,7 @@ for my $lua_file (@lua_files){
         },
     });
 
-    warn $ast->sprint;
+#    warn $ast->sprint;
 
     eq_or_diff $ast->roundtrip($discardables), $lua_src,
         qq{$lua_file roundtripped};
